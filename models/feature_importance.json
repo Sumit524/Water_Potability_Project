@@ -1,0 +1,25 @@
+{
+  "features": [
+    "ph",
+    "Hardness",
+    "Solids",
+    "Chloramines",
+    "Sulfate",
+    "Conductivity",
+    "Organic_carbon",
+    "Trihalomethanes",
+    "Turbidity"
+  ],
+  "importances": [
+    0.09969411764705875,
+    0.05267516339869273,
+    0.06520326797385614,
+    0.04787320261437899,
+    0.09512549019607835,
+    0.016285620915032613,
+    0.0006509803921569413,
+    0.020989542483660042,
+    0.001444444444444352
+  ],
+  "method": "permutation"
+}

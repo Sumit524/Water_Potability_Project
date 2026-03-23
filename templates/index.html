@@ -1,0 +1,549 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>AquaML — Water Potability Intelligence</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Mono:wght@300;400;500&display=swap" rel="stylesheet"/>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+  :root {
+    --bg:#040d12;--bg2:#071520;--bg3:#0b2030;--card:#0d2335;
+    --border:#1a3a52;--accent:#00d4ff;--accent2:#00ff9d;
+    --accent3:#ff6b35;--accent4:#b44dff;--danger:#ff3a5c;
+    --text:#e8f4f8;--muted:#5a8fa8;
+    --font-head:'Syne',sans-serif;--font-mono:'DM Mono',monospace;
+  }
+  *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:var(--font-mono);background:var(--bg);color:var(--text);min-height:100vh;overflow-x:hidden}
+  body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellipse 80% 50% at 10% 20%,rgba(0,212,255,0.06) 0%,transparent 60%),radial-gradient(ellipse 60% 40% at 90% 80%,rgba(0,255,157,0.04) 0%,transparent 60%);pointer-events:none;z-index:0}
+  .app{position:relative;z-index:1;display:flex;min-height:100vh}
+
+  /* Sidebar */
+  .sidebar{width:230px;flex-shrink:0;background:linear-gradient(180deg,var(--bg2) 0%,var(--bg) 100%);border-right:1px solid var(--border);display:flex;flex-direction:column;position:sticky;top:0;height:100vh}
+  .logo-area{padding:26px 22px 20px;border-bottom:1px solid var(--border)}
+  .logo-icon{width:38px;height:38px;background:linear-gradient(135deg,var(--accent),var(--accent2));border-radius:9px;display:flex;align-items:center;justify-content:center;font-size:19px;margin-bottom:9px;box-shadow:0 0 18px rgba(0,212,255,0.3)}
+  .logo-title{font-family:var(--font-head);font-size:17px;font-weight:800;color:var(--text)}
+  .logo-sub{font-size:9px;color:var(--muted);letter-spacing:.15em;text-transform:uppercase;margin-top:2px}
+  .nav{flex:1;padding:18px 10px;display:flex;flex-direction:column;gap:3px}
+  .nav-section{font-size:9px;color:var(--muted);letter-spacing:.15em;text-transform:uppercase;padding:10px 12px 3px}
+  .nav-item{display:flex;align-items:center;gap:9px;padding:9px 12px;border-radius:8px;font-size:12px;color:var(--muted);cursor:pointer;transition:all .2s;border:1px solid transparent}
+  .nav-item:hover,.nav-item.active{background:rgba(0,212,255,0.08);border-color:rgba(0,212,255,0.2);color:var(--accent)}
+  .sidebar-footer{padding:14px 18px;border-top:1px solid var(--border);font-size:10px;color:var(--muted)}
+  .dot{display:inline-block;width:6px;height:6px;background:var(--accent2);border-radius:50%;margin-right:5px;animation:pulse 2s infinite}
+  @keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
+  @keyframes fadeUp{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:translateY(0)}}
+
+  /* Main */
+  .main{flex:1;padding:30px;overflow-y:auto}
+  .page-header{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:28px}
+  .page-title{font-family:var(--font-head);font-size:26px;font-weight:800;line-height:1.1}
+  .page-title span{background:linear-gradient(90deg,var(--accent),var(--accent2));-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+  .page-sub{font-size:11px;color:var(--muted);margin-top:5px}
+  .live-badge{display:flex;align-items:center;gap:6px;padding:5px 12px;background:rgba(0,255,157,0.08);border:1px solid rgba(0,255,157,0.25);border-radius:20px;font-size:11px;color:var(--accent2)}
+
+  /* Stat cards */
+  .stat-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:26px}
+  .stat-card{background:var(--card);border:1px solid var(--border);border-radius:13px;padding:18px;position:relative;overflow:hidden;transition:transform .2s;animation:fadeUp .6s both}
+  .stat-card::before{content:'';position:absolute;top:0;left:0;right:0;height:2px}
+  .stat-card.c1::before{background:linear-gradient(90deg,var(--accent),transparent)}
+  .stat-card.c2::before{background:linear-gradient(90deg,var(--accent2),transparent)}
+  .stat-card.c3::before{background:linear-gradient(90deg,var(--accent3),transparent)}
+  .stat-card.c4::before{background:linear-gradient(90deg,var(--accent4),transparent)}
+  .stat-card:hover{transform:translateY(-2px)}
+  .stat-label{font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:.12em}
+  .stat-value{font-family:var(--font-head);font-size:32px;font-weight:800;line-height:1;margin:6px 0 3px}
+  .stat-card.c1 .stat-value{color:var(--accent)}
+  .stat-card.c2 .stat-value{color:var(--accent2)}
+  .stat-card.c3 .stat-value{color:var(--accent3)}
+  .stat-card.c4 .stat-value{color:var(--accent4)}
+  .stat-meta{font-size:10px;color:var(--muted)}
+  .stat-icon{position:absolute;top:14px;right:14px;font-size:24px;opacity:.12}
+
+  /* Section */
+  .section-title{font-family:var(--font-head);font-size:13px;font-weight:700;color:var(--text);display:flex;align-items:center;gap:8px;margin-bottom:14px}
+  .section-title::after{content:'';flex:1;height:1px;background:var(--border)}
+  .section-tag{font-size:9px;padding:2px 7px;background:rgba(0,212,255,0.1);border:1px solid rgba(0,212,255,0.2);color:var(--accent);border-radius:10px;letter-spacing:.1em;text-transform:uppercase}
+
+  /* Charts */
+  .chart-grid-2{display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-bottom:26px}
+  .chart-grid-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:18px;margin-bottom:26px}
+  .chart-card{background:var(--card);border:1px solid var(--border);border-radius:13px;padding:18px;animation:fadeUp .7s both}
+  .chart-card.wide{grid-column:span 2}
+  .chart-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px}
+  .chart-name{font-family:var(--font-head);font-size:12px;font-weight:700;color:var(--text)}
+  .chart-badge{font-size:9px;padding:2px 8px;border-radius:10px}
+
+  /* Table */
+  .table-wrap{overflow-x:auto}
+  table{width:100%;border-collapse:collapse;font-size:11px}
+  th{text-align:left;padding:9px 12px;font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:.1em;border-bottom:1px solid var(--border)}
+  td{padding:10px 12px;border-bottom:1px solid rgba(26,58,82,.5)}
+  tr:hover td{background:rgba(0,212,255,.04)}
+  .rank-1{background:rgba(0,255,157,.03)}
+  .rank-1 td:first-child{color:var(--accent2);font-weight:700}
+  .score-bar-wrap{display:flex;align-items:center;gap:7px}
+  .score-bar{height:4px;border-radius:2px;background:linear-gradient(90deg,var(--accent),var(--accent2))}
+
+  /* Feature bars */
+  .feature-list{display:flex;flex-direction:column;gap:9px}
+  .feature-row{display:flex;align-items:center;gap:9px}
+  .feature-name{font-size:10px;color:var(--muted);width:130px;flex-shrink:0}
+  .feature-track{flex:1;height:5px;background:var(--bg3);border-radius:3px;overflow:hidden}
+  .feature-fill{height:100%;border-radius:3px;background:linear-gradient(90deg,var(--accent),var(--accent4));transition:width 1.2s cubic-bezier(.16,1,.3,1)}
+  .feature-pct{font-size:10px;color:var(--accent);width:38px;text-align:right}
+
+  /* Confusion Matrix */
+  .cm-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;max-width:260px;margin:0 auto}
+  .cm-cell{border-radius:8px;padding:16px;text-align:center}
+  .cm-val{font-family:var(--font-head);font-size:26px;font-weight:800}
+  .cm-label{font-size:9px;color:var(--muted);margin-top:3px;text-transform:uppercase;letter-spacing:.08em}
+  .cm-tp{background:rgba(0,255,157,.12);border:1px solid rgba(0,255,157,.25)} .cm-tp .cm-val{color:var(--accent2)}
+  .cm-tn{background:rgba(0,212,255,.1);border:1px solid rgba(0,212,255,.2)}  .cm-tn .cm-val{color:var(--accent)}
+  .cm-fp{background:rgba(255,107,53,.1);border:1px solid rgba(255,107,53,.2)} .cm-fp .cm-val{color:var(--accent3)}
+  .cm-fn{background:rgba(255,58,92,.1);border:1px solid rgba(255,58,92,.2)}  .cm-fn .cm-val{color:var(--danger)}
+
+  /* Predictor */
+  .predictor-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:18px}
+  .input-group{display:flex;flex-direction:column;gap:5px}
+  .input-label{font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:.12em}
+  .input-wrap{position:relative}
+  .input-wrap input{width:100%;padding:9px 42px 9px 12px;background:var(--bg2);border:1px solid var(--border);border-radius:7px;color:var(--text);font-family:var(--font-mono);font-size:12px;transition:border-color .2s;outline:none}
+  .input-wrap input:focus{border-color:var(--accent);box-shadow:0 0 0 2px rgba(0,212,255,.1)}
+  .input-unit{position:absolute;right:10px;top:50%;transform:translateY(-50%);font-size:9px;color:var(--muted)}
+  .predict-btn{width:100%;padding:13px;background:linear-gradient(135deg,var(--accent),var(--accent2));border:none;border-radius:9px;font-family:var(--font-head);font-size:13px;font-weight:700;color:var(--bg);cursor:pointer;transition:transform .15s,box-shadow .15s}
+  .predict-btn:hover{transform:translateY(-2px);box-shadow:0 8px 22px rgba(0,212,255,.3)}
+  .result-card{margin-top:18px;padding:22px;border-radius:13px;text-align:center;display:none;animation:fadeUp .4s both}
+  .result-card.safe{background:rgba(0,255,157,.07);border:1px solid rgba(0,255,157,.3)}
+  .result-card.unsafe{background:rgba(255,58,92,.07);border:1px solid rgba(255,58,92,.3)}
+  .result-icon{font-size:36px;margin-bottom:6px}
+  .result-label{font-family:var(--font-head);font-size:20px;font-weight:800}
+  .result-card.safe .result-label{color:var(--accent2)}
+  .result-card.unsafe .result-label{color:var(--danger)}
+  .result-prob{font-size:12px;color:var(--muted);margin-top:5px}
+  .prob-track{height:7px;background:var(--bg3);border-radius:4px;overflow:hidden;margin-top:12px}
+  .prob-fill{height:100%;border-radius:4px;transition:width 1s cubic-bezier(.16,1,.3,1)}
+  .result-card.safe .prob-fill{background:linear-gradient(90deg,var(--accent2),var(--accent))}
+  .result-card.unsafe .prob-fill{background:linear-gradient(90deg,var(--danger),var(--accent3))}
+
+  /* WHO */
+  .who-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:9px}
+  .who-item{background:var(--bg2);border:1px solid var(--border);border-radius:9px;padding:11px 13px}
+  .who-param{font-size:11px;color:var(--accent);font-weight:600;margin-bottom:3px}
+  .who-range{font-size:11px;color:var(--text);font-family:var(--font-mono)}
+  .who-note{font-size:9px;color:var(--muted);margin-top:2px}
+
+  /* Pipeline */
+  .pipeline{display:flex;align-items:center;background:var(--bg2);border:1px solid var(--border);border-radius:13px;padding:18px;overflow-x:auto;gap:0}
+  .pipe-step{flex-shrink:0;text-align:center;padding:0 18px}
+  .pipe-icon{width:44px;height:44px;border-radius:11px;display:flex;align-items:center;justify-content:center;font-size:20px;margin:0 auto 7px}
+  .pipe-name{font-family:var(--font-head);font-size:11px;font-weight:700;color:var(--text)}
+  .pipe-desc{font-size:9px;color:var(--muted);margin-top:2px;max-width:85px}
+  .pipe-arrow{color:var(--border);font-size:18px;flex-shrink:0}
+
+  /* Loading spinner */
+  .loading{display:flex;align-items:center;justify-content:center;padding:30px;color:var(--muted);font-size:12px;gap:8px}
+  .spinner{width:16px;height:16px;border:2px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin .8s linear infinite}
+  @keyframes spin{to{transform:rotate(360deg)}}
+
+  ::-webkit-scrollbar{width:5px;height:5px}
+  ::-webkit-scrollbar-track{background:var(--bg)}
+  ::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px}
+  @media(max-width:1100px){.stat-grid{grid-template-columns:repeat(2,1fr)}.chart-grid-2,.chart-grid-3{grid-template-columns:1fr}.chart-card.wide{grid-column:span 1}.predictor-grid{grid-template-columns:1fr 1fr}.who-grid{grid-template-columns:1fr 1fr}}
+  @media(max-width:700px){.sidebar{display:none}.predictor-grid{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<div class="app">
+
+  <aside class="sidebar">
+    <div class="logo-area">
+      <div class="logo-icon">💧</div>
+      <div class="logo-title">AquaML</div>
+      <div class="logo-sub">Water Intelligence System</div>
+    </div>
+    <nav class="nav">
+      <div class="nav-section">Dashboard</div>
+      <div class="nav-item active"><span>📊</span> Overview</div>
+      <div class="nav-item"><span>🤖</span> Model Performance</div>
+      <div class="nav-item"><span>🔬</span> Feature Analysis</div>
+      <div class="nav-section">Tools</div>
+      <div class="nav-item"><span>📡</span> IoT Predictor</div>
+      <div class="nav-item"><span>📋</span> WHO Standards</div>
+      <div class="nav-section">Pipeline</div>
+      <div class="nav-item"><span>⚙️</span> ML Pipeline</div>
+    </nav>
+    <div class="sidebar-footer"><span class="dot"></span>Model Live</div>
+  </aside>
+
+  <main class="main">
+
+    <div class="page-header">
+      <div>
+        <div class="page-title">Water Potability <span>Intelligence</span></div>
+        <div class="page-sub">ML + IoT · Real-time water quality prediction system</div>
+      </div>
+      <div class="live-badge"><span class="dot"></span>System Online</div>
+    </div>
+
+    <!-- Stat Cards -->
+    <div class="stat-grid">
+      <div class="stat-card c1"><div class="stat-icon">🗃️</div><div class="stat-label">Total Samples</div><div class="stat-value" id="s-total">—</div><div class="stat-meta">water quality records</div></div>
+      <div class="stat-card c2"><div class="stat-icon">✅</div><div class="stat-label">Potable</div><div class="stat-value" id="s-potable">—</div><div class="stat-meta" id="s-potable-pct">—</div></div>
+      <div class="stat-card c3"><div class="stat-icon">⚠️</div><div class="stat-label">Not Potable</div><div class="stat-value" id="s-notpotable">—</div><div class="stat-meta" id="s-notpotable-pct">—</div></div>
+      <div class="stat-card c4"><div class="stat-icon">🔮</div><div class="stat-label">Best ROC-AUC</div><div class="stat-value" id="s-auc">—</div><div class="stat-meta" id="s-modelname">—</div></div>
+    </div>
+
+    <!-- Model metrics -->
+    <div class="section-title">Model Performance <span class="section-tag">Best Model</span></div>
+    <div class="chart-grid-3" style="margin-bottom:26px">
+      <div class="chart-card">
+        <div class="chart-head"><div class="chart-name">Metrics Overview</div><div class="chart-badge" style="background:rgba(0,212,255,.1);color:var(--accent)" id="best-model-badge">—</div></div>
+        <canvas id="metricsBar" height="200"></canvas>
+      </div>
+      <div class="chart-card">
+        <div class="chart-head"><div class="chart-name">Confusion Matrix</div></div>
+        <div id="cmGrid" class="loading"><div class="spinner"></div>Loading...</div>
+      </div>
+      <div class="chart-card">
+        <div class="chart-head"><div class="chart-name">Class Distribution</div></div>
+        <canvas id="classDoughnut" height="200"></canvas>
+      </div>
+    </div>
+
+    <!-- All model comparison -->
+    <div class="section-title">All Models Comparison <span class="section-tag">Ranked by AUC</span></div>
+    <div class="chart-grid-2" style="margin-bottom:26px">
+      <div class="chart-card">
+        <div class="chart-head"><div class="chart-name">ROC-AUC — All Models</div></div>
+        <canvas id="aucBar" height="220"></canvas>
+      </div>
+      <div class="chart-card">
+        <div class="chart-head"><div class="chart-name">Accuracy vs F1</div></div>
+        <canvas id="accF1Bar" height="220"></canvas>
+      </div>
+    </div>
+
+    <div class="chart-card" style="margin-bottom:26px">
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>#</th><th>Model</th><th>Accuracy</th><th>Precision</th><th>Recall</th><th>F1</th><th>ROC-AUC</th></tr></thead>
+          <tbody id="modelTable"><tr><td colspan="7"><div class="loading"><div class="spinner"></div>Loading...</div></td></tr></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Feature importance -->
+    <div class="section-title">Feature Importance <span class="section-tag">Best Model</span></div>
+    <div class="chart-grid-2" style="margin-bottom:26px">
+      <div class="chart-card">
+        <div class="chart-head"><div class="chart-name">Importance Scores</div></div>
+        <div class="feature-list" id="featureList"><div class="loading"><div class="spinner"></div>Loading...</div></div>
+      </div>
+      <div class="chart-card">
+        <div class="chart-head"><div class="chart-name">pH Distribution by Potability</div></div>
+        <canvas id="phDist" height="220"></canvas>
+      </div>
+    </div>
+
+    <!-- IoT Predictor -->
+    <div class="section-title">IoT Live Predictor <span class="section-tag">Real Model</span></div>
+    <div class="chart-card" style="margin-bottom:26px">
+      <div class="predictor-grid">
+        <div class="input-group"><div class="input-label">pH Level</div><div class="input-wrap"><input type="number" id="i_ph" placeholder="7.0" step="0.01"/><span class="input-unit">pH</span></div></div>
+        <div class="input-group"><div class="input-label">Hardness</div><div class="input-wrap"><input type="number" id="i_hard" placeholder="200" step="0.1"/><span class="input-unit">mg/L</span></div></div>
+        <div class="input-group"><div class="input-label">Solids (TDS)</div><div class="input-wrap"><input type="number" id="i_sol" placeholder="20000"/><span class="input-unit">ppm</span></div></div>
+        <div class="input-group"><div class="input-label">Chloramines</div><div class="input-wrap"><input type="number" id="i_chl" placeholder="7.0" step="0.01"/><span class="input-unit">ppm</span></div></div>
+        <div class="input-group"><div class="input-label">Sulfate</div><div class="input-wrap"><input type="number" id="i_sulf" placeholder="330" step="0.1"/><span class="input-unit">mg/L</span></div></div>
+        <div class="input-group"><div class="input-label">Conductivity</div><div class="input-wrap"><input type="number" id="i_cond" placeholder="410" step="0.1"/><span class="input-unit">μS/cm</span></div></div>
+        <div class="input-group"><div class="input-label">Organic Carbon</div><div class="input-wrap"><input type="number" id="i_org" placeholder="13.5" step="0.01"/><span class="input-unit">ppm</span></div></div>
+        <div class="input-group"><div class="input-label">Trihalomethanes</div><div class="input-wrap"><input type="number" id="i_tri" placeholder="68" step="0.1"/><span class="input-unit">μg/L</span></div></div>
+        <div class="input-group"><div class="input-label">Turbidity</div><div class="input-wrap"><input type="number" id="i_turb" placeholder="3.8" step="0.01"/><span class="input-unit">NTU</span></div></div>
+      </div>
+      <button class="predict-btn" onclick="runPredict()">⚡ Analyze Water Sample</button>
+      <div class="result-card" id="resultCard">
+        <div class="result-icon" id="rIcon"></div>
+        <div class="result-label" id="rLabel"></div>
+        <div class="result-prob" id="rProb"></div>
+        <div class="prob-track"><div class="prob-fill" id="rFill" style="width:0%"></div></div>
+      </div>
+    </div>
+
+    <!-- WHO Standards -->
+    <div class="section-title">WHO Water Quality Standards <span class="section-tag">Reference</span></div>
+    <div class="chart-card" style="margin-bottom:26px">
+      <div class="who-grid">
+        <div class="who-item"><div class="who-param">pH</div><div class="who-range">6.5 – 8.5</div><div class="who-note">Acid/alkaline balance</div></div>
+        <div class="who-item"><div class="who-param">Hardness</div><div class="who-range">≤ 300 mg/L</div><div class="who-note">Calcium & magnesium</div></div>
+        <div class="who-item"><div class="who-param">TDS (Solids)</div><div class="who-range">≤ 500 mg/L</div><div class="who-note">Total dissolved solids</div></div>
+        <div class="who-item"><div class="who-param">Chloramines</div><div class="who-range">≤ 3 mg/L</div><div class="who-note">Disinfection byproduct</div></div>
+        <div class="who-item"><div class="who-param">Sulfate</div><div class="who-range">≤ 250 mg/L</div><div class="who-note">Natural mineral salt</div></div>
+        <div class="who-item"><div class="who-param">Conductivity</div><div class="who-range">≤ 400 μS/cm</div><div class="who-note">Ion concentration</div></div>
+        <div class="who-item"><div class="who-param">Organic Carbon</div><div class="who-range">≤ 2 mg/L</div><div class="who-note">Organic matter level</div></div>
+        <div class="who-item"><div class="who-param">Trihalomethanes</div><div class="who-range">≤ 80 μg/L</div><div class="who-note">Chlorination byproduct</div></div>
+        <div class="who-item"><div class="who-param">Turbidity</div><div class="who-range">1-5 NTU</div><div class="who-note">Water clarity</div></div>
+      </div>
+    </div>
+
+    <!-- Pipeline -->
+    <div class="section-title">ML Pipeline <span class="section-tag">Architecture</span></div>
+    <div class="pipeline" style="margin-bottom:26px">
+      <div class="pipe-step"><div class="pipe-icon" style="background:rgba(0,212,255,.12)">📂</div><div class="pipe-name">Data Loader</div><div class="pipe-desc">CSV · validation · EDA</div></div>
+      <div class="pipe-arrow">→</div>
+      <div class="pipe-step"><div class="pipe-icon" style="background:rgba(0,255,157,.12)">🔧</div><div class="pipe-name">Feature Eng.</div><div class="pipe-desc">5 new domain features</div></div>
+      <div class="pipe-arrow">→</div>
+      <div class="pipe-step"><div class="pipe-icon" style="background:rgba(255,107,53,.12)">🧹</div><div class="pipe-name">Preprocess</div><div class="pipe-desc">KNN · IQR · RobustScaler</div></div>
+      <div class="pipe-arrow">→</div>
+      <div class="pipe-step"><div class="pipe-icon" style="background:rgba(180,77,255,.12)">🤖</div><div class="pipe-name">Train</div><div class="pipe-desc">7 algorithms · 5-fold CV</div></div>
+      <div class="pipe-arrow">→</div>
+      <div class="pipe-step"><div class="pipe-icon" style="background:rgba(0,212,255,.12)">📊</div><div class="pipe-name">Evaluate</div><div class="pipe-desc">9 charts · AUC · CM</div></div>
+      <div class="pipe-arrow">→</div>
+      <div class="pipe-step"><div class="pipe-icon" style="background:rgba(0,255,157,.12)">📡</div><div class="pipe-name">IoT Predict</div><div class="pipe-desc">Live sensor → result</div></div>
+    </div>
+
+  </main>
+</div>
+
+<script>
+const C = {
+  accent:'#00d4ff', accent2:'#00ff9d', accent3:'#ff6b35',
+  accent4:'#b44dff', danger:'#ff3a5c', bg:'#040d12', bg3:'#0b2030'
+};
+Chart.defaults.color        = '#5a8fa8';
+Chart.defaults.font.family  = "'DM Mono',monospace";
+Chart.defaults.font.size    = 11;
+const grid = { color:'rgba(26,58,82,0.5)' };
+
+let metricsBarChart, aucBarChart, accF1BarChart;
+
+// ── Fetch all data on load ────────────────────────────────────────
+async function init() {
+  const [dataset, model, comparison, features, phDist] = await Promise.all([
+    fetch('/api/dataset').then(r => r.json()),
+    fetch('/api/model').then(r => r.json()),
+    fetch('/api/comparison').then(r => r.json()).catch(() => null),
+    fetch('/api/feature_importance').then(r => r.json()),
+    fetch('/api/ph_distribution').then(r => r.json()),
+  ]);
+
+  renderStats(dataset, model);
+  renderMetricsBar(model);
+  renderConfusionMatrix(model.confusion_matrix);
+  renderClassDoughnut(dataset);
+  renderFeatureImportance(features);
+  renderPhDist(phDist);
+  if (comparison) {
+    renderModelTable(comparison);
+    renderAucBar(comparison);
+    renderAccF1Bar(comparison);
+  }
+}
+
+// ── Stat cards ────────────────────────────────────────────────────
+function renderStats(ds, model) {
+  document.getElementById('s-total').textContent       = ds.total.toLocaleString();
+  document.getElementById('s-potable').textContent     = ds.potable.toLocaleString();
+  document.getElementById('s-potable-pct').textContent = `${ds.potable_pct}% of dataset`;
+  document.getElementById('s-notpotable').textContent  = ds.not_potable.toLocaleString();
+  document.getElementById('s-notpotable-pct').textContent = `${ds.not_potable_pct}% of dataset`;
+  document.getElementById('s-auc').textContent         = model.roc_auc.toFixed(3);
+  document.getElementById('s-modelname').textContent   = model.model_name;
+  document.getElementById('best-model-badge').textContent = model.model_name;
+}
+
+// ── Metrics bar chart ─────────────────────────────────────────────
+function renderMetricsBar(m) {
+  const labels = ['Accuracy','Precision','Recall','F1','ROC-AUC'];
+  const values = [m.accuracy, m.precision, m.recall, m.f1, m.roc_auc];
+  const colors = [C.accent, C.accent2, C.accent3, C.accent4, C.danger];
+  metricsBarChart = new Chart(document.getElementById('metricsBar'), {
+    type: 'bar',
+    data: {
+      labels,
+      datasets: [{ data: values, backgroundColor: colors.map(c => c+'bb'),
+        borderRadius: 6, borderSkipped: false }]
+    },
+    options: {
+      responsive: true,
+      plugins: { legend: { display: false } },
+      scales: {
+        x: { grid },
+        y: { grid, min: 0.5, max: 1.0, ticks: { callback: v => v.toFixed(2) } }
+      }
+    }
+  });
+}
+
+// ── Confusion matrix ──────────────────────────────────────────────
+function renderConfusionMatrix(cm) {
+  const tn=cm[0][0], fp=cm[0][1], fn=cm[1][0], tp=cm[1][1];
+  document.getElementById('cmGrid').innerHTML = `
+    <div class="cm-grid">
+      <div class="cm-cell cm-tn"><div class="cm-val">${tn}</div><div class="cm-label">True Negative</div></div>
+      <div class="cm-cell cm-fp"><div class="cm-val">${fp}</div><div class="cm-label">False Positive</div></div>
+      <div class="cm-cell cm-fn"><div class="cm-val">${fn}</div><div class="cm-label">False Negative</div></div>
+      <div class="cm-cell cm-tp"><div class="cm-val">${tp}</div><div class="cm-label">True Positive</div></div>
+    </div>`;
+}
+
+// ── Class doughnut ────────────────────────────────────────────────
+function renderClassDoughnut(ds) {
+  new Chart(document.getElementById('classDoughnut'), {
+    type: 'doughnut',
+    data: {
+      labels: ['Not Potable','Potable'],
+      datasets: [{ data:[ds.not_potable, ds.potable],
+        backgroundColor:[C.danger, C.accent2],
+        borderColor: C.bg, borderWidth: 3, hoverOffset: 6 }]
+    },
+    options: {
+      responsive: true, cutout: '65%',
+      plugins: {
+        legend: { position:'bottom', labels:{ padding:14 } },
+        tooltip: { callbacks:{ label: ctx =>
+          ` ${ctx.label}: ${ctx.raw} (${(ctx.raw/(ds.total)*100).toFixed(1)}%)`
+        }}
+      }
+    }
+  });
+}
+
+// ── Model comparison table ────────────────────────────────────────
+function renderModelTable(data) {
+  const sorted = [...data].sort((a,b) => b.roc_auc - a.roc_auc);
+  const tbody = document.getElementById('modelTable');
+  tbody.innerHTML = '';
+  sorted.forEach((m, i) => {
+    const bar = v => `<div class="score-bar-wrap">
+      <div class="score-bar" style="width:${Math.round((v-0.5)/0.5*80)}px"></div>
+      <span>${v.toFixed(3)}</span></div>`;
+    const tr = document.createElement('tr');
+    if (i === 0) tr.className = 'rank-1';
+    tr.innerHTML = `<td>${i===0?'🥇':i+1}</td>
+      <td style="font-weight:600;color:var(--text)">${m.model_name}</td>
+      <td>${bar(m.accuracy)}</td><td>${bar(m.precision)}</td>
+      <td>${bar(m.recall)}</td><td>${bar(m.f1)}</td><td>${bar(m.roc_auc)}</td>`;
+    tbody.appendChild(tr);
+  });
+}
+
+// ── AUC bar ───────────────────────────────────────────────────────
+function renderAucBar(data) {
+  const sorted = [...data].sort((a,b) => b.roc_auc - a.roc_auc);
+  aucBarChart = new Chart(document.getElementById('aucBar'), {
+    type: 'bar',
+    data: {
+      labels: sorted.map(m => m.model_name),
+      datasets: [{ label:'ROC-AUC', data: sorted.map(m => m.roc_auc),
+        backgroundColor: sorted.map((_,i) => `hsla(${185+i*18},90%,60%,0.75)`),
+        borderRadius: 6, borderSkipped: false }]
+    },
+    options: {
+      responsive: true, plugins: { legend: { display:false } },
+      scales: { x:{ grid, ticks:{ maxRotation:30 } },
+        y:{ grid, ticks:{ callback: v => v.toFixed(2) } } }
+    }
+  });
+}
+
+// ── Acc + F1 bar ──────────────────────────────────────────────────
+function renderAccF1Bar(data) {
+  const sorted = [...data].sort((a,b) => b.roc_auc - a.roc_auc);
+  accF1BarChart = new Chart(document.getElementById('accF1Bar'), {
+    type: 'bar',
+    data: {
+      labels: sorted.map(m => m.model_name),
+      datasets: [
+        { label:'Accuracy', data: sorted.map(m => m.accuracy),
+          backgroundColor: C.accent+'bb', borderRadius:4, borderSkipped:false },
+        { label:'F1 Score', data: sorted.map(m => m.f1),
+          backgroundColor: C.accent2+'bb', borderRadius:4, borderSkipped:false },
+      ]
+    },
+    options: {
+      responsive: true, plugins: { legend:{ position:'top' } },
+      scales: { x:{ grid, ticks:{ maxRotation:30 } },
+        y:{ grid, ticks:{ callback: v => v.toFixed(2) } } }
+    }
+  });
+}
+
+// ── Feature importance ────────────────────────────────────────────
+function renderFeatureImportance(data) {
+  const pairs = data.features.map((f,i) => ({ name:f, imp:data.importances[i] }))
+    .sort((a,b) => b.imp - a.imp);
+  const maxImp = pairs[0].imp;
+  const fl = document.getElementById('featureList');
+  fl.innerHTML = pairs.map(p => `
+    <div class="feature-row">
+      <div class="feature-name">${p.name}</div>
+      <div class="feature-track">
+        <div class="feature-fill" style="width:0%" data-pct="${Math.round(p.imp/maxImp*100)}%"></div>
+      </div>
+      <div class="feature-pct">${(p.imp*100).toFixed(1)}%</div>
+    </div>`).join('');
+  setTimeout(() => {
+    document.querySelectorAll('.feature-fill').forEach(el => {
+      el.style.width = el.dataset.pct;
+    });
+  }, 300);
+}
+
+// ── pH distribution ───────────────────────────────────────────────
+function renderPhDist(d) {
+  new Chart(document.getElementById('phDist'), {
+    type: 'bar',
+    data: {
+      labels: d.labels,
+      datasets: [
+        { label:'Potable',     data: d.potable,     backgroundColor: C.accent2+'bb', borderRadius:3 },
+        { label:'Not Potable', data: d.not_potable, backgroundColor: C.danger+'99',  borderRadius:3 },
+      ]
+    },
+    options: {
+      responsive: true, plugins:{ legend:{ position:'top' } },
+      scales: {
+        x: { stacked:true, grid, title:{ display:true, text:'pH Range', color:'#5a8fa8' } },
+        y: { stacked:true, grid, title:{ display:true, text:'Count',    color:'#5a8fa8' } }
+      }
+    }
+  });
+}
+
+// ── IoT Predict ───────────────────────────────────────────────────
+async function runPredict() {
+  const ids = { ph:'i_ph', Hardness:'i_hard', Solids:'i_sol',
+    Chloramines:'i_chl', Sulfate:'i_sulf', Conductivity:'i_cond',
+    Organic_carbon:'i_org', Trihalomethanes:'i_tri', Turbidity:'i_turb' };
+  const payload = {};
+  for (const [key, id] of Object.entries(ids)) {
+    const v = parseFloat(document.getElementById(id).value);
+    if (isNaN(v)) { alert('Please fill all fields.'); return; }
+    payload[key] = v;
+  }
+  const btn = document.querySelector('.predict-btn');
+  btn.textContent = '⏳ Analyzing...'; btn.disabled = true;
+  try {
+    const res  = await fetch('/api/predict', { method:'POST',
+      headers:{'Content-Type':'application/json'}, body: JSON.stringify(payload) });
+    const data = await res.json();
+    if (data.error) { alert(data.error); return; }
+    const safe = data.prediction === 1;
+    const card = document.getElementById('resultCard');
+    card.className = `result-card ${safe ? 'safe' : 'unsafe'}`;
+    card.style.display = 'block';
+    document.getElementById('rIcon').textContent  = safe ? '✅' : '⚠️';
+    document.getElementById('rLabel').textContent = safe ? 'POTABLE — Safe to drink' : 'NOT POTABLE — Unsafe';
+    document.getElementById('rProb').textContent  = `Potability probability: ${(data.probability*100).toFixed(1)}%`;
+    setTimeout(() => {
+      document.getElementById('rFill').style.width = `${(data.probability*100).toFixed(1)}%`;
+    }, 100);
+  } finally {
+    btn.textContent = '⚡ Analyze Water Sample'; btn.disabled = false;
+  }
+}
+
+init();
+</script>
+</body>
+</html>
