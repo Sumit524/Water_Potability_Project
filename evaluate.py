@@ -1,3 +1,5 @@
+from math import dist
+import json
 import os
 import warnings
 import numpy as np
@@ -17,6 +19,7 @@ warnings.filterwarnings("ignore")
 # ── Constants ─────────────────────────────────────────────────────────────────
 
 REPORT_DIR = "reports"
+MODEL_DIR = "models"
 PLOT_STYLE = "seaborn-v0_8-darkgrid"
 
 os.makedirs(REPORT_DIR, exist_ok=True)
@@ -82,8 +85,33 @@ def plot_confusion_matrix(y_test, y_pred, model_name: str):
 # ── 3. ROC Curve ─────────────────────────────────────────────────────────────
 
 def plot_roc_curve(y_test, y_proba, model_name: str):
-    fpr, tpr, _ = roc_curve(y_test, y_proba)
+    fpr, tpr, thresholds = roc_curve(y_test, y_proba)
     auc = roc_auc_score(y_test, y_proba)
+    J = tpr - fpr
+    ix = np.argmax(J)
+    best_threshold = thresholds[ix]
+    print("Best Threshold:", best_threshold)
+
+    #Method 2: Closest to (0,1)
+    # dist = np.sqrt((1 - tpr)**2 + (fpr)**2)
+    # ix = np.argmin(dist)
+    # best_threshold = thresholds[ix]
+
+    #Method 3: TPR >= 0.9
+    # choose threshold where TPR >= 0.9
+    #   ix = np.where(tpr >= 0.9)[0][0]
+    #   best_threshold = thresholds[ix]
+
+    os.makedirs(MODEL_DIR, exist_ok=True)
+
+    threshold_data = {
+        "model": model_name,
+        "threshold": best_threshold,
+        "auc": float(auc)
+    }
+
+    with open(os.path.join(MODEL_DIR, "threshold.json"), "w") as f:
+        json.dump(threshold_data, f, indent=2)
 
     fig, ax = plt.subplots(figsize=(6, 5))
     ax.plot(fpr, tpr, color="#1f77b4", lw=2.5, label=f"AUC = {auc:.4f}")

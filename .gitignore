@@ -1,4 +1,4 @@
-# Ignore virtual environment
+.# Ignore virtual environment
 venv/
 
 # Python cache

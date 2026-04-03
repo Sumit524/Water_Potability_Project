@@ -1,1 +1,1 @@
-["ph", "Hardness", "Solids", "Chloramines", "Sulfate", "Conductivity", "Organic_carbon", "Trihalomethanes", "Turbidity"]
+["ph", "Hardness", "Solids", "Chloramines", "Sulfate", "Conductivity", "Organic_carbon", "Trihalomethanes", "Turbidity", "ph_category", "hardness_solids", "chloramine_ph", "conductivity_ratio", "turbidity_organic"]

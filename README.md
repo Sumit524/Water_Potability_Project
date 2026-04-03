@@ -89,8 +89,7 @@ pip install -r requirements.txt
 ### 🔹 Train the Model
 
 ```
-cd model
-python train_model.py
+python train.py
 ```
 
 ---
@@ -98,8 +97,7 @@ python train_model.py
 ### 🔹 Run the UI
 
 ```
-cd ../app
-python ui.py
+python app.py
 ```
 
 ## 📊 Model Details

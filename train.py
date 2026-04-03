@@ -34,19 +34,45 @@ NEEDS_SCALING = {"SVM", "Logistic Regression"}
 # ── Model Registry ────────────────────────────────────────────────
 
 MODELS = {
-    "Random Forest": RandomForestClassifier(
-        n_estimators=300, max_depth=None, min_samples_split=5,
-        class_weight="balanced", random_state=RANDOM_STATE, n_jobs=-1
-    ),
-    "XGBoost": XGBClassifier(
-        n_estimators=200, learning_rate=0.03, max_depth=6,
-        subsample=0.8, colsample_bytree=0.8,
-        eval_metric="logloss", random_state=RANDOM_STATE
-    ),
-    "LightGBM": LGBMClassifier(
-        n_estimators=200, learning_rate=0.05, max_depth=-1, num_leaves=31,
-        class_weight="balanced", random_state=RANDOM_STATE, n_jobs=-1, verbose=-1
-    ),
+   "XGBoost": XGBClassifier(
+    n_estimators=500,
+    learning_rate=0.05,
+    max_depth=5,
+    subsample=0.8,
+    colsample_bytree=0.8,
+    min_child_weight=3,
+    gamma=0.1,
+    reg_alpha=0.1,
+    reg_lambda=1.0,
+    scale_pos_weight=1,          # adjust if class imbalance is severe
+    eval_metric="logloss",
+    random_state=RANDOM_STATE
+),
+"LightGBM": LGBMClassifier(
+    n_estimators=500,
+    learning_rate=0.05,
+    max_depth=7,
+    num_leaves=63,               
+    min_child_samples=20,
+    subsample=0.8,
+    colsample_bytree=0.8,
+    reg_alpha=0.1,
+    reg_lambda=1.0,
+    class_weight="balanced",
+    random_state=RANDOM_STATE,
+    n_jobs=-1,
+    verbose=-1
+),
+"Random Forest": RandomForestClassifier(
+    n_estimators=500,           
+    max_depth=None,
+    min_samples_split=4,
+    min_samples_leaf=2,
+    max_features="sqrt",
+    class_weight="balanced",
+    random_state=RANDOM_STATE,
+    n_jobs=-1
+),
     "Gradient Boosting": GradientBoostingClassifier(
         n_estimators=200, learning_rate=0.05, max_depth=4, random_state=RANDOM_STATE
     ),

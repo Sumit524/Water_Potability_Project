@@ -134,12 +134,31 @@
   .who-note{font-size:9px;color:var(--muted);margin-top:2px}
 
   /* Pipeline */
-  .pipeline{display:flex;align-items:center;background:var(--bg2);border:1px solid var(--border);border-radius:13px;padding:18px;overflow-x:auto;gap:0}
+  .pipeline{display:flex;align-items:center;background:var(--bg2);border:1px solid var(--border);border-radius:13px;padding:18px;overflow-x:auto;gap:0;flex-wrap:nowrap}
   .pipe-step{flex-shrink:0;text-align:center;padding:0 18px}
   .pipe-icon{width:44px;height:44px;border-radius:11px;display:flex;align-items:center;justify-content:center;font-size:20px;margin:0 auto 7px}
   .pipe-name{font-family:var(--font-head);font-size:11px;font-weight:700;color:var(--text)}
   .pipe-desc{font-size:9px;color:var(--muted);margin-top:2px;max-width:85px}
   .pipe-arrow{color:var(--border);font-size:18px;flex-shrink:0}
+
+
+ .missing-box{
+  display:flex;
+  flex-direction:column;
+  align-items:flex-start;
+  background:var(--bg2);
+  border:1px solid var(--border);
+  border-radius:13px;
+  padding:14px 18px;
+  margin-top:15px;
+  overflow-x:auto;
+  gap:6px;
+  font-size:11px;
+  color:var(--text);
+  text-align:left;
+}
+.missing-box ul{padding-left:18px;margin-top:4px;display:flex;flex-direction:column;gap:3px}
+.missing-box b{color:var(--accent3)}
 
   /* Loading spinner */
   .loading{display:flex;align-items:center;justify-content:center;padding:30px;color:var(--muted);font-size:12px;gap:8px}
@@ -149,6 +168,7 @@
   ::-webkit-scrollbar{width:5px;height:5px}
   ::-webkit-scrollbar-track{background:var(--bg)}
   ::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px}
+  .section-title[id], .stat-grid[id]{scroll-margin-top:20px}
   @media(max-width:1100px){.stat-grid{grid-template-columns:repeat(2,1fr)}.chart-grid-2,.chart-grid-3{grid-template-columns:1fr}.chart-card.wide{grid-column:span 1}.predictor-grid{grid-template-columns:1fr 1fr}.who-grid{grid-template-columns:1fr 1fr}}
   @media(max-width:700px){.sidebar{display:none}.predictor-grid{grid-template-columns:1fr}}
 </style>
@@ -164,14 +184,14 @@
     </div>
     <nav class="nav">
       <div class="nav-section">Dashboard</div>
-      <div class="nav-item active"><span>📊</span> Overview</div>
-      <div class="nav-item"><span>🤖</span> Model Performance</div>
-      <div class="nav-item"><span>🔬</span> Feature Analysis</div>
+      <div class="nav-item active" onclick="navTo('section-overview', this)"><span>📊</span> Overview</div>
+      <div class="nav-item" onclick="navTo('section-model', this)"><span>🤖</span> Model Performance</div>
+      <div class="nav-item" onclick="navTo('section-feature', this)"><span>🔬</span> Feature Analysis</div>
       <div class="nav-section">Tools</div>
-      <div class="nav-item"><span>📡</span> IoT Predictor</div>
-      <div class="nav-item"><span>📋</span> WHO Standards</div>
+      <div class="nav-item" onclick="navTo('section-iot', this)"><span>📡</span> IoT Predictor</div>
+      <div class="nav-item" onclick="navTo('section-who', this)"><span>📋</span> WHO Standards</div>
       <div class="nav-section">Pipeline</div>
-      <div class="nav-item"><span>⚙️</span> ML Pipeline</div>
+      <div class="nav-item" onclick="navTo('section-pipeline', this)"><span>⚙️</span> ML Pipeline</div>
     </nav>
     <div class="sidebar-footer"><span class="dot"></span>Model Live</div>
   </aside>
@@ -187,15 +207,14 @@
     </div>
 
     <!-- Stat Cards -->
-    <div class="stat-grid">
+    <div id="section-overview" class="stat-grid">
       <div class="stat-card c1"><div class="stat-icon">🗃️</div><div class="stat-label">Total Samples</div><div class="stat-value" id="s-total">—</div><div class="stat-meta">water quality records</div></div>
       <div class="stat-card c2"><div class="stat-icon">✅</div><div class="stat-label">Potable</div><div class="stat-value" id="s-potable">—</div><div class="stat-meta" id="s-potable-pct">—</div></div>
       <div class="stat-card c3"><div class="stat-icon">⚠️</div><div class="stat-label">Not Potable</div><div class="stat-value" id="s-notpotable">—</div><div class="stat-meta" id="s-notpotable-pct">—</div></div>
       <div class="stat-card c4"><div class="stat-icon">🔮</div><div class="stat-label">Best ROC-AUC</div><div class="stat-value" id="s-auc">—</div><div class="stat-meta" id="s-modelname">—</div></div>
     </div>
 
-    <!-- Model metrics -->
-    <div class="section-title">Model Performance <span class="section-tag">Best Model</span></div>
+    <div id="section-model" class="section-title">Model Performance <span class="section-tag">Best Model</span></div>
     <div class="chart-grid-3" style="margin-bottom:26px">
       <div class="chart-card">
         <div class="chart-head"><div class="chart-name">Metrics Overview</div><div class="chart-badge" style="background:rgba(0,212,255,.1);color:var(--accent)" id="best-model-badge">—</div></div>
@@ -234,7 +253,7 @@
     </div>
 
     <!-- Feature importance -->
-    <div class="section-title">Feature Importance <span class="section-tag">Best Model</span></div>
+    <div id="section-feature" class="section-title">Feature Importance <span class="section-tag">Best Model</span></div>
     <div class="chart-grid-2" style="margin-bottom:26px">
       <div class="chart-card">
         <div class="chart-head"><div class="chart-name">Importance Scores</div></div>
@@ -247,7 +266,7 @@
     </div>
 
     <!-- IoT Predictor -->
-    <div class="section-title">IoT Live Predictor <span class="section-tag">Real Model</span></div>
+    <div id="section-iot" class="section-title">IoT Live Predictor <span class="section-tag">Real Model</span></div>
     <div class="chart-card" style="margin-bottom:26px">
       <div class="predictor-grid">
         <div class="input-group"><div class="input-label">pH Level</div><div class="input-wrap"><input type="number" id="i_ph" placeholder="7.0" step="0.01"/><span class="input-unit">pH</span></div></div>
@@ -266,11 +285,12 @@
         <div class="result-label" id="rLabel"></div>
         <div class="result-prob" id="rProb"></div>
         <div class="prob-track"><div class="prob-fill" id="rFill" style="width:0%"></div></div>
+        <div id="missingInfo" class="missing-box" style="display:none;"></div>
       </div>
     </div>
 
     <!-- WHO Standards -->
-    <div class="section-title">WHO Water Quality Standards <span class="section-tag">Reference</span></div>
+    <div id="section-who" class="section-title">WHO Water Quality Standards <span class="section-tag">Reference</span></div>
     <div class="chart-card" style="margin-bottom:26px">
       <div class="who-grid">
         <div class="who-item"><div class="who-param">pH</div><div class="who-range">6.5 – 8.5</div><div class="who-note">Acid/alkaline balance</div></div>
@@ -286,7 +306,7 @@
     </div>
 
     <!-- Pipeline -->
-    <div class="section-title">ML Pipeline <span class="section-tag">Architecture</span></div>
+    <div id="section-pipeline" class="section-title">ML Pipeline <span class="section-tag">Architecture</span></div>
     <div class="pipeline" style="margin-bottom:26px">
       <div class="pipe-step"><div class="pipe-icon" style="background:rgba(0,212,255,.12)">📂</div><div class="pipe-name">Data Loader</div><div class="pipe-desc">CSV · validation · EDA</div></div>
       <div class="pipe-arrow">→</div>
@@ -368,7 +388,7 @@ function renderMetricsBar(m) {
       plugins: { legend: { display: false } },
       scales: {
         x: { grid },
-        y: { grid, min: 0.5, max: 1.0, ticks: { callback: v => v.toFixed(2) } }
+        y: { grid, min: 0.1, max: 1.0, ticks: { callback: v => v.toFixed(2) } }
       }
     }
   });
@@ -512,38 +532,123 @@ function renderPhDist(d) {
 
 // ── IoT Predict ───────────────────────────────────────────────────
 async function runPredict() {
-  const ids = { ph:'i_ph', Hardness:'i_hard', Solids:'i_sol',
-    Chloramines:'i_chl', Sulfate:'i_sulf', Conductivity:'i_cond',
-    Organic_carbon:'i_org', Trihalomethanes:'i_tri', Turbidity:'i_turb' };
+  const fields = {
+    ph: { id:'i_ph', min:0, max:14 },
+    Hardness: { id:'i_hard', min:0, max:500 },
+    Solids: { id:'i_sol', min:0, max:70000 },
+    Chloramines: { id:'i_chl', min:0, max:20 },
+    Sulfate: { id:'i_sulf', min:0, max:1000 },
+    Conductivity: { id:'i_cond', min:0, max:2000 },
+    Organic_carbon: { id:'i_org', min:0, max:50 },
+    Trihalomethanes: { id:'i_tri', min:0, max:200 },
+    Turbidity: { id:'i_turb', min:0, max:10 }
+  };
+
   const payload = {};
-  for (const [key, id] of Object.entries(ids)) {
-    const v = parseFloat(document.getElementById(id).value);
-    if (isNaN(v)) { alert('Please fill all fields.'); return; }
-    payload[key] = v;
+
+  for (const [key, obj] of Object.entries(fields)) {
+    const inputEl = document.getElementById(obj.id);
+    const val = inputEl.value.trim();
+
+    if (val === "") {
+      payload[key] = null; // let backend imputer handle
+      inputEl.style.border = "1px solid orange";
+      continue;
+    }
+
+    const num = parseFloat(val);
+
+    // ❌ Invalid number
+    if (isNaN(num)) {
+      alert(`${key} must be a valid number`);
+      inputEl.focus();
+      return;
+    }
+
+    // ❌ Out of range
+    if (num < obj.min || num > obj.max) {
+      alert(`${key} must be between ${obj.min} and ${obj.max}`);
+      inputEl.focus();
+      inputEl.style.border = "2px solid red";
+      return;
+    }
+
+    // ✅ Valid
+    inputEl.style.border = "1px solid #ccc";
+    payload[key] = num;
   }
+
   const btn = document.querySelector('.predict-btn');
-  btn.textContent = '⏳ Analyzing...'; btn.disabled = true;
+  btn.textContent = '⏳ Analyzing...';
+  btn.disabled = true;
+
   try {
-    const res  = await fetch('/api/predict', { method:'POST',
-      headers:{'Content-Type':'application/json'}, body: JSON.stringify(payload) });
+    const res  = await fetch('/api/predict', {
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify(payload)
+    });
+
     const data = await res.json();
-    if (data.error) { alert(data.error); return; }
+
+    if (data.error) {
+      alert(data.error);
+      return;
+    }
+
     const safe = data.prediction === 1;
     const card = document.getElementById('resultCard');
+
     card.className = `result-card ${safe ? 'safe' : 'unsafe'}`;
     card.style.display = 'block';
+
     document.getElementById('rIcon').textContent  = safe ? '✅' : '⚠️';
-    document.getElementById('rLabel').textContent = safe ? 'POTABLE — Safe to drink' : 'NOT POTABLE — Unsafe';
-    document.getElementById('rProb').textContent  = `Potability probability: ${(data.probability*100).toFixed(1)}%`;
+    document.getElementById('rLabel').textContent =
+      safe ? 'POTABLE — Safe to drink' : 'NOT POTABLE — Unsafe';
+
+    document.getElementById('rProb').textContent =
+      `Potability probability: ${(data.probability*100).toFixed(1)}%`;
+      // Show missing + filled values
+const missingBox = document.getElementById('missingInfo');
+
+if (data.missing_fields && data.missing_fields.length > 0) {
+  
+  let html = `<p><b>⚠ Missing values auto-filled:</b></p><ul>`;
+
+  data.missing_fields.forEach(f => {
+    const val = data.filled_values?.[f];
+    html += `<li>${f} → ${val !== undefined ? val : 'N/A'} (estimated)</li>`;
+  });
+
+  html += `</ul>`;
+
+  missingBox.innerHTML = html;
+  missingBox.style.display = 'block';
+
+} else {
+  missingBox.style.display = 'none';
+}
+
     setTimeout(() => {
-      document.getElementById('rFill').style.width = `${(data.probability*100).toFixed(1)}%`;
+      document.getElementById('rFill').style.width =
+        `${(data.probability*100).toFixed(1)}%`;
     }, 100);
+
   } finally {
-    btn.textContent = '⚡ Analyze Water Sample'; btn.disabled = false;
+    btn.textContent = '⚡ Analyze Water Sample';
+    btn.disabled = false;
   }
+}
+// ── Sidebar navigation ────────────────────────────────────────────
+function navTo(sectionId, el) {
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  el.classList.add('active');
+  const target = document.getElementById(sectionId);
+  if (target) target.scrollIntoView({ behavior: 'smooth', block: 'start' });
 }
 
 init();
 </script>
+
 </body>
 </html>
