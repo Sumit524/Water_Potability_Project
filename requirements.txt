@@ -13,6 +13,7 @@ seaborn>=0.12.0
 
 # ── Model Persistence ─────────────────────────────
 joblib>=1.3.0
+imbalanced-learn>=0.12.0
 
 # ── Web App ───────────────────────────────────────
 flask>=3.0.0

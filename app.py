@@ -6,6 +6,7 @@ import warnings
 import numpy as np
 import pandas as pd
 from flask import Flask, render_template, jsonify, request
+from xgboost import data
 from feature_engineering import engineer_features
 
 warnings.filterwarnings("ignore")
@@ -23,7 +24,7 @@ CM_PATH         = os.path.join(BASE_DIR, "models", "confusion_matrix.json")
 FI_PATH         = os.path.join(BASE_DIR, "models", "feature_importance.json")
 THRESHOLD_PATH  = os.path.join(BASE_DIR, "models", "threshold.json")
 
-# ── BUG FIX 1: Separate raw sensor fields from full feature list ───
+
 # The predictor form only collects these 9 raw sensor values.
 # The 5 engineered features are derived server-side before prediction.
 RAW_FEATURES = [
@@ -197,9 +198,16 @@ def api_predict():
         data = request.get_json(force=True)
 
         # ── Step 1: Accept missing values instead of hard rejecting ──
-        MAX_ALLOWED_MISSING = 3  # adjust based on your use case
-
+        MAX_ALLOWED_MISSING = 6
+        
         missing_fields = [f for f in RAW_FEATURES if f not in data or data[f] is None or data[f] == ""]
+        #ph value ,solid and turbidity are required but we can allow some missing values for the rest of the features. so if above three are missing we will reject the request immediately. but if some of the other features are missing we will fill them with the imputer and warn the user that the prediction may be less reliable.
+        required_fields = ["ph", "Solids", "Turbidity"]
+        # print("Incoming data:", data)
+        if any(f not in data or data[f] is None or data[f] == "" for f in required_fields):
+            return jsonify({
+                "error": "Required fields (ph, Solids, Turbidity) are missing or empty."
+            }), 400
 
         if len(missing_fields) > MAX_ALLOWED_MISSING:
             return jsonify({
@@ -238,12 +246,12 @@ def api_predict():
 
         # ── Step 5: Predict ──
         model     = get_model()
-        proba     = float(model.predict_proba(df_sc)[0][1])
+        proba     = float(model.predict_proba(df_sc)[0][1]) 
         threshold = get_threshold()
         pred      = int(proba >= threshold)
 
         # ── Step 6: Warn if prediction may be less reliable ──
-        warning = None
+        warning = None 
         if len(missing_fields) > 0:
             warning = f"{len(missing_fields)} sensor(s) were missing and filled automatically: {missing_fields}"
 

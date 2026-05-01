@@ -48,6 +48,41 @@ def get_data_info(df):
     return info
 
 
+def get_selected_features(df, features=None, include_target=True):
+    """
+    Return a DataFrame with only selected features.
+
+    Args:
+        df: Input DataFrame (from load_data)
+        features: List of feature column names to select.
+                  Defaults to ['ph', 'Solids', 'Turbidity'].
+        include_target: Whether to include the 'Potability' target column (default True)
+
+    Returns:
+        DataFrame containing only the selected feature columns (+ Potability if requested)
+    """
+    if features is None:
+        features = ['ph', 'Solids', 'Turbidity']
+
+    # Validate that requested columns exist
+    missing_cols = [col for col in features if col not in df.columns]
+    if missing_cols:
+        raise ValueError(f"Columns not found in DataFrame: {missing_cols}. "
+                         f"Available columns: {list(df.columns)}")
+
+    selected_cols = features.copy()
+    if include_target:
+        if 'Potability' not in df.columns:
+            logger.warning("'Potability' column not found; skipping target inclusion.")
+        else:
+            selected_cols.append('Potability')
+
+    subset_df = df[selected_cols].copy()
+    logger.info(f"Selected features: {features} | include_target={include_target}")
+    logger.info(f"Resulting shape: {subset_df.shape}")
+    return subset_df
+
+
 if __name__ == "__main__":
     df = load_data()
     
