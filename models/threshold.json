@@ -1,5 +1,5 @@
 {
-  "model": "Random Forest",
-  "threshold": 0.4912211450175027,
-  "auc": 0.7144528848251651
+  "model": "Voting Ensemble",
+  "threshold": 0.5105094690474495,
+  "auc": 0.7168527737559254
 }

@@ -287,11 +287,11 @@ def evaluate_selected(
 # ── Entry Point ───────────────────────────────────────────────────────────────
 
 if __name__ == "__main__":
-    from data_loader         import load_data, get_selected_features
-    from feature_engineering import engineer_features, engineer_features_selected
-    from preprocess          import preprocess, preprocess_selected
+    from data_loader         import load_data
+    from feature_engineering import engineer_features
+    from preprocess          import preprocess
     from train               import train
-    from train_selected      import train_selected
+    # from train_selected      import train_selected
 
     # ── Load & engineer features ──────────────────────────────────────────────
     df = load_data()

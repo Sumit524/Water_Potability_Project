@@ -238,16 +238,21 @@
         <canvas id="aucBar" height="220"></canvas>
       </div>
       <div class="chart-card">
-        <div class="chart-head"><div class="chart-name">Accuracy vs F1</div></div>
-        <canvas id="accF1Bar" height="220"></canvas>
+        <div class="chart-head"><div class="chart-name">Train vs Test Accuracy</div><div class="chart-badge" style="background:rgba(255,107,53,.1);color:var(--accent3);font-size:9px;padding:2px 8px;border-radius:10px">Overfit Check</div></div>
+        <canvas id="trainTestBar" height="220"></canvas>
       </div>
+    </div>
+
+    <div class="chart-card" style="margin-bottom:18px">
+      <div class="chart-head"><div class="chart-name">Accuracy vs F1</div></div>
+      <canvas id="accF1Bar" height="180"></canvas>
     </div>
 
     <div class="chart-card" style="margin-bottom:26px">
       <div class="table-wrap">
         <table>
-          <thead><tr><th>#</th><th>Model</th><th>Accuracy</th><th>Precision</th><th>Recall</th><th>F1</th><th>ROC-AUC</th></tr></thead>
-          <tbody id="modelTable"><tr><td colspan="7"><div class="loading"><div class="spinner"></div>Loading...</div></td></tr></tbody>
+          <thead><tr><th>#</th><th>Model</th><th>Train Acc</th><th>Test Acc</th><th>Gap</th><th>Precision</th><th>Recall</th><th>F1</th><th>ROC-AUC</th></tr></thead>
+          <tbody id="modelTable"><tr><td colspan="9"><div class="loading"><div class="spinner"></div>Loading...</div></td></tr></tbody>
         </table>
       </div>
     </div>
@@ -287,6 +292,7 @@
         <div class="result-prob" id="rProb"></div>
         <div class="prob-track"><div class="prob-fill" id="rFill" style="width:0%"></div></div>
         <div id="missingInfo" class="missing-box" style="display:none;"></div>
+        <div id="correlationInfo" style="display:none; margin-top:12px;"></div>
       </div>
     </div>
 
@@ -357,6 +363,7 @@ async function init() {
     renderModelTable(comparison);
     renderAucBar(comparison);
     renderAccF1Bar(comparison);
+    renderTrainTestBar(comparison);
   }
 }
 
@@ -438,11 +445,17 @@ function renderModelTable(data) {
     const bar = v => `<div class="score-bar-wrap">
       <div class="score-bar" style="width:${Math.round((v-0.5)/0.5*80)}px"></div>
       <span>${v.toFixed(3)}</span></div>`;
+    const trainAcc = m.train_accuracy != null ? m.train_accuracy.toFixed(3) : '—';
+    const testAcc  = m.test_accuracy  != null ? m.test_accuracy.toFixed(3)  : (m.accuracy != null ? m.accuracy.toFixed(3) : '—');
+    const gap      = m.overfit_gap    != null ? m.overfit_gap               : (m.train_accuracy != null && m.test_accuracy != null ? m.train_accuracy - m.test_accuracy : null);
+    const gapColor = gap == null ? '' : gap > 0.1 ? 'color:var(--danger)' : gap > 0.05 ? 'color:var(--accent3)' : 'color:var(--accent2)';
+    const gapStr   = gap != null ? `<span style="${gapColor}">${gap > 0 ? '+' : ''}${gap.toFixed(3)}</span>` : '—';
     const tr = document.createElement('tr');
     if (i === 0) tr.className = 'rank-1';
     tr.innerHTML = `<td>${i===0?'🥇':i+1}</td>
       <td style="font-weight:600;color:var(--text)">${m.model_name}</td>
-      <td>${bar(m.accuracy)}</td><td>${bar(m.precision)}</td>
+      <td>${trainAcc}</td><td>${testAcc}</td><td>${gapStr}</td>
+      <td>${bar(m.precision)}</td>
       <td>${bar(m.recall)}</td><td>${bar(m.f1)}</td><td>${bar(m.roc_auc)}</td>`;
     tbody.appendChild(tr);
   });
@@ -489,7 +502,41 @@ function renderAccF1Bar(data) {
   });
 }
 
-// ── Feature importance ────────────────────────────────────────────
+// ── Train vs Test accuracy bar ────────────────────────────────────
+function renderTrainTestBar(data) {
+  const sorted = [...data].sort((a,b) => b.roc_auc - a.roc_auc);
+  new Chart(document.getElementById('trainTestBar'), {
+    type: 'bar',
+    data: {
+      labels: sorted.map(m => m.model_name),
+      datasets: [
+        { label:'Train Accuracy',
+          data: sorted.map(m => m.train_accuracy != null ? m.train_accuracy : m.accuracy),
+          backgroundColor: C.accent+'bb', borderRadius:4, borderSkipped:false },
+        { label:'Test Accuracy',
+          data: sorted.map(m => m.test_accuracy  != null ? m.test_accuracy  : m.accuracy),
+          backgroundColor: C.accent3+'bb', borderRadius:4, borderSkipped:false },
+      ]
+    },
+    options: {
+      responsive: true,
+      plugins: { legend:{ position:'top' },
+        tooltip:{ callbacks:{ afterBody: items => {
+          const idx = items[0].dataIndex;
+          const m   = sorted[idx];
+          const gap = m.overfit_gap != null ? m.overfit_gap
+                    : (m.train_accuracy != null && m.test_accuracy != null
+                       ? m.train_accuracy - m.test_accuracy : null);
+          return gap != null ? [`Gap: ${gap > 0 ? '+' : ''}${gap.toFixed(3)}`] : [];
+        }}}
+      },
+      scales: { x:{ grid, ticks:{ maxRotation:30 } },
+        y:{ grid, min:0.5, max:1.0, ticks:{ callback: v => v.toFixed(2) } } }
+    }
+  });
+}
+
+
 function renderFeatureImportance(data) {
   const pairs = data.features.map((f,i) => ({ name:f, imp:data.importances[i] }))
     .sort((a,b) => b.imp - a.imp);
@@ -530,7 +577,117 @@ function renderPhDist(d) {
     }
   });
 }
+function renderCorrelationUI(data) {
+  const corrBox = document.getElementById('correlationInfo');
+  const corr = data.filled_feature_correlations;
 
+  if (!corr || Object.keys(corr).length === 0) {
+    corrBox.style.display = 'none';
+    return;
+  }
+
+  if (!document.getElementById('corr-styles')) {
+    const style = document.createElement('style');
+    style.id = 'corr-styles';
+    style.textContent = `
+      .corr-list  { display:flex; flex-direction:column; gap:10px; margin-top:14px; }
+      .corr-item  { border:1px solid #ddd; border-radius:8px; padding:12px 14px; }
+      .corr-row   { display:flex; align-items:center; gap:8px; margin:4px 0; }
+      .corr-track { flex:1; height:4px; background:#eee; border-radius:2px; overflow:hidden; }
+      .corr-bar   { height:100%; border-radius:2px; }
+      .bar-pos    { background:#1D9E75; }
+      .bar-neg    { background:#D85A30; }
+    `;
+    document.head.appendChild(style);
+  }
+
+  let maxR = 0;
+  Object.values(corr).forEach(fc =>
+    Object.values(fc.correlated_with).forEach(v => {
+      if (Math.abs(v) > maxR) maxR = Math.abs(v);
+    })
+  );
+  if (maxR === 0) maxR = 1;
+
+  let itemsHtml = '';
+
+  Object.entries(corr).forEach(([feature, fc]) => {
+    let barsHtml = '';
+    Object.entries(fc.correlated_with).forEach(([prov, r]) => {
+      const pct   = Math.round((Math.abs(r) / maxR) * 100);
+      const sign  = r >= 0 ? '+' : '−';
+      barsHtml += `
+        <div class="corr-row">
+         <span style="width:80px;font-size:12px;color:#fff;">${prov}</span>
+          <div class="corr-track">
+            <div class="corr-bar ${r >= 0 ? 'bar-pos' : 'bar-neg'}" style="width:${pct}%"></div>
+          </div>
+          <span style="width:50px;text-align:right;font-size:11px;color:#999;">${sign}${Math.abs(r).toFixed(4)}</span>
+        </div>`;
+    });
+
+   itemsHtml += `
+  <div class="corr-item">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
+      <span style="font-size:14px;font-weight:500;color:#00bcd4;">${feature}
+        <span style="font-size:12px;font-weight:400;color:#999;margin-left:6px;">${fc.filled_value?.toFixed(4) ?? '—'}</span>
+      </span>
+     
+    </div>
+    ${barsHtml}
+    <div style="margin-top:8px;font-size:11px;color:#999;">
+      Strongest predictor: <strong style="color:#fff;">${fc.strongest_predictor}</strong>
+    </div>
+  </div>`;
+  });
+
+  corrBox.innerHTML = `
+    <div style="font-size:13px;font-weight:500;margin-bottom:6px;">Feature correlations</div>
+    <div class="corr-list">${itemsHtml}</div>`;
+
+  corrBox.style.display = 'block';
+}
+
+function renderMissingUI(data) {
+  const missingBox = document.getElementById('missingInfo');
+
+  if (!data.missing_fields || data.missing_fields.length === 0) {
+    missingBox.style.display = 'none';
+    return;
+  }
+
+  if (!document.getElementById('missing-styles')) {
+    const style = document.createElement('style');
+    style.id = 'missing-styles';
+    style.textContent = `
+      .missing-list { display:flex; flex-direction:column; gap:10px; margin-top:14px; }
+      .missing-item { border:1px solid #ddd; border-radius:8px; padding:12px 14px; display:flex; justify-content:space-between; align-items:center; }
+    `;
+    document.head.appendChild(style);
+  }
+
+  let rowsHtml = '';
+  data.missing_fields.forEach(f => {
+    const val = data.filled_values?.[f];
+    rowsHtml += `
+      <div class="missing-item">
+        <span style="font-size:14px;font-weight:500;color:#00bcd4;">${f}</span>
+        <div style="display:flex;align-items:center;gap:10px;">
+          <span style="font-size:13px;color:#fff;">${val !== undefined ? val : '—'}</span>
+          <span style="font-size:11px;color:#999;">auto-filled</span>
+        </div>
+      </div>`;
+  });
+
+  missingBox.innerHTML = `
+    <div style="font-size:13px;font-weight:500;margin-bottom:6px;">
+      Auto-filled values
+      <span style="font-size:11px;color:#999;margin-left:8px;">${data.missing_fields.length} missing</span>
+    </div>
+    <div class="missing-list">${rowsHtml}</div>`;
+
+  missingBox.style.display = 'block';
+}
 // ── IoT Predict ───────────────────────────────────────────────────
 async function runPredict() {
   const fields = {
@@ -582,63 +739,44 @@ async function runPredict() {
   const btn = document.querySelector('.predict-btn');
   btn.textContent = '⏳ Analyzing...';
   btn.disabled = true;
-
-  try {
-    const res  = await fetch('/api/predict', {
-      method:'POST',
-      headers:{'Content-Type':'application/json'},
-      body: JSON.stringify(payload)
-    });
-
-    const data = await res.json();
-
-    if (data.error) {
-      alert(data.error);
-      return;
-    }
-
-    const safe = data.prediction === 1;
-    const card = document.getElementById('resultCard');
-
-    card.className = `result-card ${safe ? 'safe' : 'unsafe'}`;
-    card.style.display = 'block';
-
-    document.getElementById('rIcon').textContent  = safe ? '✅' : '⚠️';
-    document.getElementById('rLabel').textContent =
-      safe ? 'POTABLE — Safe to drink' : 'NOT POTABLE — Unsafe';
-
-    document.getElementById('rProb').textContent =
-      `Potability probability: ${(data.probability*100).toFixed(1)}%`;
-      // Show missing + filled values
-const missingBox = document.getElementById('missingInfo');
-
-if (data.missing_fields && data.missing_fields.length > 0) {
-  
-  let html = `<p><b>⚠ Missing values auto-filled:</b></p><ul>`;
-
-  data.missing_fields.forEach(f => {
-    const val = data.filled_values?.[f];
-    html += `<li>${f} → ${val !== undefined ? val : 'N/A'} (estimated)</li>`;
+try {
+  const res  = await fetch('/api/predict', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload)
   });
 
-  html += `</ul>`;
+  const data = await res.json();
 
-  missingBox.innerHTML = html;
-  missingBox.style.display = 'block';
-
-} else {
-  missingBox.style.display = 'none';
-}
-
-    setTimeout(() => {
-      document.getElementById('rFill').style.width =
-        `${(data.probability*100).toFixed(1)}%`;
-    }, 100);
-
-  } finally {
-    btn.textContent = '⚡ Analyze Water Sample';
-    btn.disabled = false;
+  if (data.error) {
+    alert(data.error);
+    return;
   }
+
+  const safe = data.prediction === 1;
+  const card = document.getElementById('resultCard');
+
+  card.className = `result-card ${safe ? 'safe' : 'unsafe'}`;
+  card.style.display = 'block';
+
+  document.getElementById('rIcon').textContent  = safe ? '✅' : '⚠️';
+  document.getElementById('rLabel').textContent = safe ? 'POTABLE — Safe to drink' : 'NOT POTABLE — Unsafe';
+  document.getElementById('rProb').textContent  = `Potability probability: ${(data.probability * 100).toFixed(1)}%`;
+
+  setTimeout(() => {
+    document.getElementById('rFill').style.width = `${(data.probability * 100).toFixed(1)}%`;
+  }, 100);
+
+  // ── Missing values section ──
+  renderMissingUI(data);
+
+  // ── Correlation section (independent of missing fields) ──
+  renderCorrelationUI(data);
+
+} finally {
+  btn.textContent = '⚡ Analyze Water Sample';
+  btn.disabled = false;
+}
 }
 // ── Sidebar navigation ────────────────────────────────────────────
 function navTo(sectionId, el) {
