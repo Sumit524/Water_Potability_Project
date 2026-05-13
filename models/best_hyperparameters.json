@@ -1,38 +1,38 @@
 {
   "Random Forest": {
     "best_params": {
-      "n_estimators": 470,
-      "max_depth": 15,
-      "min_samples_split": 9,
-      "min_samples_leaf": 2,
+      "n_estimators": 758,
+      "max_depth": 11,
+      "min_samples_split": 7,
+      "min_samples_leaf": 3,
       "max_features": 0.5
     },
-    "best_cv_score": 0.6925,
+    "best_cv_score": 0.6921,
     "metric": "roc_auc"
   },
   "Extra Trees": {
     "best_params": {
-      "n_estimators": 570,
-      "max_depth": null,
-      "min_samples_split": 7,
-      "min_samples_leaf": 2
+      "n_estimators": 459,
+      "max_depth": 19,
+      "min_samples_split": 4,
+      "min_samples_leaf": 3
     },
-    "best_cv_score": 0.6819,
+    "best_cv_score": 0.6788,
     "metric": "roc_auc"
   },
   "LightGBM": {
     "best_params": {
-      "n_estimators": 767,
+      "n_estimators": 672,
       "max_depth": 9,
-      "lr": 0.006157152637144911,
-      "num_leaves": 119,
-      "min_child_samples": 8,
-      "subsample": 0.6949746432058617,
-      "colsample_bytree": 0.8249867373590708,
-      "reg_alpha": 0.6443509282636922,
-      "reg_lambda": 4.502368490917332
+      "lr": 0.008053286340515997,
+      "num_leaves": 56,
+      "min_child_samples": 24,
+      "subsample": 0.665517725426662,
+      "colsample_bytree": 0.9579788893272074,
+      "reg_alpha": 1.3517133305667612,
+      "reg_lambda": 2.8760000078727033
     },
-    "best_cv_score": 0.6829,
+    "best_cv_score": 0.6755,
     "metric": "roc_auc"
   }
 }

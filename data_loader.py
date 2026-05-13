@@ -9,7 +9,6 @@ import logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-
 def load_data(filepath="data/kaggle_water_quality.csv"):
     """
     Load water potability dataset.
@@ -22,19 +21,33 @@ def load_data(filepath="data/kaggle_water_quality.csv"):
     """
     try:
         df = pd.read_csv(filepath)
+
         logger.info(f"Data loaded successfully from {filepath}")
         logger.info(f"Shape: {df.shape}")
         logger.info(f"Columns: {list(df.columns)}")
-        
+
+        # Print min and max values of each feature
+        logger.info("\nFeature-wise Min and Max Values:")
+
+        for column in df.columns:
+            if pd.api.types.is_numeric_dtype(df[column]):
+                min_val = df[column].min()
+                max_val = df[column].max()
+
+                logger.info(
+                    f"{column:<20} Min: {min_val:.4f}   Max: {max_val:.4f}"
+                )
+
         return df
+
     except FileNotFoundError:
         logger.error(f"File not found: {filepath}")
         raise
+
     except Exception as e:
         logger.error(f"Error loading data: {str(e)}")
         raise
-
-
+    
 def get_data_info(df):
     """Get comprehensive data information."""
     info = {
