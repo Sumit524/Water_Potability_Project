@@ -1,82 +1,82 @@
 [
   {
     "model_name": "XGBoost",
-    "train_accuracy": 0.9389,
-    "test_accuracy": 0.8421000000000001,
-    "overfit_gap": 0.0968,
-    "precision": 0.7379,
-    "recall": 0.7866,
-    "f1": 0.7612000000000001,
-    "roc_auc": 0.9080999999999999
+    "train_accuracy": 0.9114,
+    "test_accuracy": 0.9,
+    "overfit_gap": 0.0114,
+    "precision": 0.9423,
+    "recall": 0.9074,
+    "f1": 0.9245,
+    "roc_auc": 0.9558
   },
   {
-    "model_name": "LightGBM [tuned]",
-    "train_accuracy": 0.9708,
-    "test_accuracy": 0.8206,
-    "overfit_gap": 0.1502,
-    "precision": 0.7103999999999999,
-    "recall": 0.8772,
-    "f1": 0.7821,
-    "roc_auc": 0.9014
+    "model_name": "LightGBM",
+    "train_accuracy": 0.9304,
+    "test_accuracy": 0.925,
+    "overfit_gap": 0.0054,
+    "precision": 0.9615,
+    "recall": 0.9259,
+    "f1": 0.9434,
+    "roc_auc": 0.9701
   },
   {
     "model_name": "Random Forest [tuned]",
-    "train_accuracy": 0.9247,
-    "test_accuracy": 0.8758999999999999,
-    "overfit_gap": 0.04879999999999998,
-    "precision": 0.7837000000000001,
-    "recall": 0.7906,
-    "f1": 0.7870999999999999,
-    "roc_auc": 0.9095
+    "train_accuracy": 0.9525,
+    "test_accuracy": 0.85,
+    "overfit_gap": 0.1025,
+    "precision": 0.8889,
+    "recall": 0.8889,
+    "f1": 0.8889,
+    "roc_auc": 0.9608
   },
   {
-    "model_name": "Gradient Boosting",
-    "train_accuracy": 0.8478,
-    "test_accuracy": 0.8621000000000001,
-    "overfit_gap": -0.014300000000000007,
-    "precision": 0.7612000000000001,
-    "recall": 0.8142,
-    "f1": 0.7865,
-    "roc_auc": 0.8996
+    "model_name": "Gradient Boosting [tuned]",
+    "train_accuracy": 0.981,
+    "test_accuracy": 0.9,
+    "overfit_gap": 0.081,
+    "precision": 0.9259,
+    "recall": 0.9259,
+    "f1": 0.9259,
+    "roc_auc": 0.9694
   },
   {
     "model_name": "Extra Trees [tuned]",
-    "train_accuracy": 0.9735,
-    "test_accuracy": 0.8682000000000001,
-    "overfit_gap": 0.1053,
-    "precision": 0.7772000000000001,
-    "recall": 0.7591000000000001,
-    "f1": 0.768,
-    "roc_auc": 0.9053
+    "train_accuracy": 0.9873,
+    "test_accuracy": 0.8875,
+    "overfit_gap": 0.0998,
+    "precision": 0.9245,
+    "recall": 0.9074,
+    "f1": 0.9159,
+    "roc_auc": 0.9765
   },
   {
     "model_name": "SVM",
-    "train_accuracy": 0.8297,
-    "test_accuracy": 0.8435999999999999,
-    "overfit_gap": -0.013900000000000023,
-    "precision": 0.7390000000000001,
-    "recall": 0.7984,
-    "f1": 0.7672000000000001,
-    "roc_auc": 0.8817999999999999
+    "train_accuracy": 0.9557,
+    "test_accuracy": 0.9125,
+    "overfit_gap": 0.0432,
+    "precision": 0.9608,
+    "recall": 0.9074,
+    "f1": 0.9333,
+    "roc_auc": 0.9815
   },
   {
     "model_name": "Logistic Regression",
-    "train_accuracy": 0.5192,
-    "test_accuracy": 0.7438,
-    "overfit_gap": -0.22460000000000002,
-    "precision": 0.6266,
-    "recall": 0.6920999999999999,
-    "f1": 0.657,
-    "roc_auc": 0.7489000000000001
+    "train_accuracy": 0.8228,
+    "test_accuracy": 0.8875,
+    "overfit_gap": -0.0647,
+    "precision": 0.9412,
+    "recall": 0.8889,
+    "f1": 0.9143,
+    "roc_auc": 0.9708
   },
   {
     "model_name": "Voting Ensemble",
-    "train_accuracy": 0.9746,
-    "test_accuracy": 0.8467,
-    "overfit_gap": 0.1279,
-    "precision": 0.7403,
-    "recall": 0.8339000000000001,
-    "f1": 0.7833000000000001,
-    "roc_auc": 0.9124000000000001
+    "train_accuracy": 0.981,
+    "test_accuracy": 0.9,
+    "overfit_gap": 0.081,
+    "precision": 0.9259,
+    "recall": 0.9259,
+    "f1": 0.9259,
+    "roc_auc": 0.9694
   }
 ]

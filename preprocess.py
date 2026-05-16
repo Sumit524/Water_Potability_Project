@@ -55,7 +55,7 @@ def preprocess(df: pd.DataFrame, test_size: float = 0.2, random_state: int = 42)
 )
 
 #5 Fit imputer only on train, transform both
-    imputer = KNNImputer(n_neighbors=5, weights="distance")
+    imputer = KNNImputer(n_neighbors=10, weights="distance")
     X_train_imp = pd.DataFrame(imputer.fit_transform(X_train_raw), columns=FEATURES)
     X_test_imp  = pd.DataFrame(imputer.transform(X_test_raw),      columns=FEATURES)
 

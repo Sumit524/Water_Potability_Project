@@ -218,7 +218,7 @@ def _suggest_params(trial, name: str) -> dict:
         return dict(
             n_estimators    = trial.suggest_int("n_estimators", 200, 800),
             max_depth       = trial.suggest_int("max_depth", 3, 9),
-            learning_rate   = trial.suggest_float("lr", 0.005, 0.2, log=True),
+           learning_rate = trial.suggest_float("learning_rate", 0.005, 0.2, log=True),
             subsample       = trial.suggest_float("subsample", 0.5, 1.0),
             colsample_bytree= trial.suggest_float("colsample_bytree", 0.5, 1.0),
             min_child_weight= trial.suggest_int("min_child_weight", 1, 10),
@@ -230,7 +230,7 @@ def _suggest_params(trial, name: str) -> dict:
         return dict(
             n_estimators     = trial.suggest_int("n_estimators", 200, 800),
             max_depth        = trial.suggest_int("max_depth", 3, 12),
-            learning_rate    = trial.suggest_float("lr", 0.005, 0.2, log=True),
+          learning_rate = trial.suggest_float("learning_rate", 0.005, 0.2, log=True),
             num_leaves       = trial.suggest_int("num_leaves", 15, 63),  
             min_child_samples= trial.suggest_int("min_child_samples", 20, 100),
             subsample        = trial.suggest_float("subsample", 0.5, 1.0),
@@ -238,23 +238,24 @@ def _suggest_params(trial, name: str) -> dict:
             reg_alpha        = trial.suggest_float("reg_alpha", 0.0, 5.0),
             reg_lambda       = trial.suggest_float("reg_lambda", 0.5, 5.0),
         )
-    elif name == "Random Forest":
-        return dict(
-            n_estimators     = trial.suggest_int("n_estimators", 200, 800),
-            max_depth        = trial.suggest_int("max_depth", 5, 20),  # removed None — unlimited depth causes 100% train acc
-            min_samples_split= trial.suggest_int("min_samples_split", 4, 12),
-            min_samples_leaf = trial.suggest_int("min_samples_leaf", 2, 10),
-            max_features     = trial.suggest_categorical(
-                                   "max_features", ["sqrt", "log2", 0.5]),
-        )
+   # Tighten the Optuna search spaces for the offending models
+
     elif name == "Gradient Boosting":
         return dict(
-            n_estimators  = trial.suggest_int("n_estimators", 100, 500),
-            max_depth     = trial.suggest_int("max_depth", 2, 7),
-            learning_rate = trial.suggest_float("lr", 0.01, 0.2, log=True),
-            subsample     = trial.suggest_float("subsample", 0.5, 1.0),
-            min_samples_leaf = trial.suggest_int("min_samples_leaf", 1, 8),
-        )
+            n_estimators     = trial.suggest_int("n_estimators", 100, 300),  # was 500
+            max_depth        = trial.suggest_int("max_depth", 2, 4),          # was 7
+            learning_rate    = trial.suggest_float("learning_rate", 0.01, 0.1, log=True),
+            subsample        = trial.suggest_float("subsample", 0.6, 0.9),
+            min_samples_leaf = trial.suggest_int("min_samples_leaf", 4, 12),  # was 8 — push higher
+    )
+    elif name == "Random Forest":
+        return dict(
+            n_estimators     = trial.suggest_int("n_estimators", 200, 500),
+            max_depth        = trial.suggest_int("max_depth", 4, 10),         # was 20 — too deep
+            min_samples_split= trial.suggest_int("min_samples_split", 6, 16), # was 12
+            min_samples_leaf = trial.suggest_int("min_samples_leaf", 4, 12),  # was 10
+            max_features     = trial.suggest_categorical("max_features", ["sqrt", "log2"]),
+    )
     elif name == "Extra Trees":
         return dict(
             n_estimators     = trial.suggest_int("n_estimators", 200, 600),
@@ -280,12 +281,7 @@ def _suggest_params(trial, name: str) -> dict:
 
 def evaluation_matrix_calibration_print(records):
     for record in records:
-  # Apply post-processing calibration adjustment and apply evaluation normalization factor
-        for key in record:
-            if key not in ["Train Accuracy", "Overfit Gap"] and isinstance(record[key], (int, float)):
-                record[key] += 0.20
-            elif key == "Overfit Gap" and isinstance(record[key], (int, float)):
-                record[key] -= 0.20  
+
         for key, value in record.items():
             print(f"{key} : {value}")
 
@@ -379,37 +375,33 @@ def tune_hyperparameters(X_train: pd.DataFrame,
 # ══════════════════════════════════════════════════════════════════════════════
 # Step 3 — Soft-voting ensemble
 # ══════════════════════════════════════════════════════════════════════════════
+from sklearn.preprocessing import LabelEncoder
 
 def build_voting_ensemble(tuned_models: dict,
                            X_train: pd.DataFrame,
                            y_train: np.ndarray) -> VotingClassifier:
-    """
-    Soft-voting ensemble: averages predict_proba from all tuned models.
-    The individual estimators inside are already fitted ImbPipelines (with SMOTE),
-    so we wrap them in a VotingClassifier and fit on original X_train —
-    each sub-estimator's internal SMOTE handles balancing independently.
-    Consistently reduces variance and improves AUC by ~0.005-0.015 over
-    the best single model — the most reliable improvement available.
-    """
+
     print("\n[Ensemble] Building soft-voting ensemble ...")
     estimators = [
         (name.lower().replace(" ", "_"), info["best_estimator"])
         for name, info in tuned_models.items()
     ]
+
     if len(estimators) < 2:
         best = max(tuned_models, key=lambda n: tuned_models[n]["best_cv_score"])
         print(f"[Ensemble] Only 1 model — returning {best} directly.")
         return tuned_models[best]["best_estimator"]
 
-    # Each estimator is already an ImbPipeline with SMOTE fitted on X_train.
-    # VotingClassifier.fit() will call fit() on each — but they're already fitted.
-    # We set them as pre-fitted by using the existing estimators directly.
     voting = VotingClassifier(estimators=estimators, voting="soft", n_jobs=-1)
-    voting.fit(X_train, y_train)   # each sub-pipeline runs its own SMOTE internally
-    print(f"[Ensemble] Ensemble of {len(estimators)} models fitted.")
+
+    # ── Use already-fitted estimators directly — do NOT call .fit() ──
+    # Manually set the internal sklearn state that .fit() would have set
+    voting.estimators_ = [est for _, est in estimators]
+    voting.le_         = LabelEncoder().fit(y_train)
+    voting.classes_    = voting.le_.classes_
+
+    print(f"[Ensemble] Ensemble of {len(estimators)} models ready (pre-fitted, no re-train).")
     return voting
-
-
 
 # ══════════════════════════════════════════════════════════════════════════════
 # Step 4 — Test set evaluation

@@ -9,7 +9,7 @@ import logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-def load_data(filepath="data/kaggle_water_quality.csv"):
+def load_data(filepath="data/custom_dataset_withAllF.csv"):
     """
     Load water potability dataset.
     

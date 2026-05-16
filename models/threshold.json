@@ -1,5 +1,5 @@
 {
-  "model": "Voting Ensemble",
-  "threshold": 0.5215765780813522,
-  "auc": 0.712370336579464
+  "model": "SVM",
+  "threshold": 0.5772774657974039,
+  "auc": 0.985042735042735
 }

@@ -16,7 +16,7 @@ warnings.filterwarnings("ignore")
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, BASE_DIR)
 
-DATA_PATH       = os.path.join(BASE_DIR, "data",   "kaggle_water_quality.csv")
+DATA_PATH       = os.path.join(BASE_DIR, "data",   "custom_dataset_withAllF.csv")
 MODEL_PATH      = os.path.join(BASE_DIR, "models", "best_model.pkl")
 SCALER_PATH     = os.path.join(BASE_DIR, "models", "scaler.pkl")
 IMPUTER_PATH    = os.path.join(BASE_DIR, "models", "imputer.pkl")
@@ -57,6 +57,12 @@ def get_pipeline():
     if "pipeline" not in _cache:
         _cache["pipeline"] = (joblib.load(IMPUTER_PATH), joblib.load(SCALER_PATH))
     return _cache["pipeline"]
+
+# ── add this helper alongside get_model(), get_pipeline(), etc. ──
+def get_solids_mapping():
+    src = np.load("data/solids_src_percentiles.npy")
+    dst = np.load("data/solids_dst_percentiles.npy")
+    return src, dst
 
 def get_threshold():
     """Load optimal decision threshold saved by train.py (default 0.5)."""
@@ -270,6 +276,9 @@ def api_predict():
                     return jsonify({
                         "error": f"Invalid value for field '{f}': {val}. Expected a number."
                     }), 400
+        if "Solids" in raw and not np.isnan(raw["Solids"]):
+            src_p, dst_p = get_solids_mapping()
+            raw["Solids"] = float(np.interp(raw["Solids"], src_p, dst_p))        
 
         df_raw = pd.DataFrame([raw])
 
