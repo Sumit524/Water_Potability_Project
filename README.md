@@ -86,10 +86,10 @@ pip install -r requirements.txt
 
 ## 🚀 Running the Project
 
-### 🔹 Train the Model
+### 🔹 Train and evaluate the Model
 
 ```
-python train.py
+python evaluate.py
 ```
 
 ---

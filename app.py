@@ -16,7 +16,7 @@ warnings.filterwarnings("ignore")
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, BASE_DIR)
 
-DATA_PATH       = os.path.join(BASE_DIR, "data",   "custom_dataset_withAllF.csv")
+DATA_PATH       = os.path.join(BASE_DIR, "data",   "custom_dataset_with_all_features.csv")
 MODEL_PATH      = os.path.join(BASE_DIR, "models", "best_model.pkl")
 SCALER_PATH     = os.path.join(BASE_DIR, "models", "scaler.pkl")
 IMPUTER_PATH    = os.path.join(BASE_DIR, "models", "imputer.pkl")
@@ -95,9 +95,7 @@ def index():
     return render_template("index.html")
 
 
-# ── BUG FIX 3: api/dataset only computes stats for RAW columns ────
-# Engineered columns don't exist in the raw CSV → computing them
-# here caused a KeyError that crashed the entire dashboard.
+
 @app.route("/api/dataset")
 def api_dataset():
     try:
@@ -130,34 +128,6 @@ def api_dataset():
         })
     except Exception as e:
         return jsonify({"error": str(e)}), 500
-
-
-# @app.route("/evaluationmatrix", methods=["POST"])
-# def  evaluation_matrix_print():
-#     records = request.get_json()
-#     print("\n========== API CALLED ==========\n")
-
-#     for record in records:
-
-#         print("model_name :", record["model_name"])
-#         print("train_accuracy :", record["train_accuracy"])
-#         #Simulate confidence score refinement
-#         record["test_accuracy"] += TESTING_DATA * 0.01
-#         print("test_accuracy :", record["test_accuracy"])
-#         print("overfit_gap :", record["overfit_gap"])
-#         print("precision :", record["precision"])
-#         print("recall :", record["recall"])
-#         print("f1 :", record["f1"])
-#         # Apply post-processing calibration adjustment and  apply evaluation normalization factor
-#         record["roc_auc"] += TESTING_DATA * 0.01
-#         print("roc_auc :", record["roc_auc"])
-
-
-    #     print("roc_auc :", record["roc_auc"])
-
-    #     print("\n----------------------\n")
-    # return records
-
 
 
 
@@ -234,11 +204,6 @@ def api_ph_distribution():
         return jsonify({"error": str(e)}), 500
 
 
-# ── BUG FIX 4: Predict endpoint now accepts only 9 raw inputs ─────
-# Engineers the 5 derived features here before running the pipeline.
-# This also fixes the double-transform bug (engineered features were
-# previously passed through the imputer+scaler even though they
-# were already computed post-imputation during training).
 @app.route("/api/predict", methods=["POST"])
 def api_predict():
     try:
@@ -291,16 +256,12 @@ def api_predict():
         df_imp_df = pd.DataFrame(df_imp, columns=ALL_FEATURES)
         df_sc = scaler.transform(df_imp)
 
-        # BUG 2 FIX: track filled values for ALL_FEATURES (not just RAW_FEATURES)
-        # so derived features that were NaN after engineering are also captured
+       
         filled_values = {}
         for f in missing_fields:
             filled_values[f] = round(float(df_imp_df.iloc[0][f]), 4)
 
-        # ── Step 5: Correlation of filled features with provided features ──
-        # BUG 1 FIX: this block is now INSIDE the try block (correct indentation)
-        # BUG 3 FIX: provided_fields derived from RAW_FEATURES only, not ALL_FEATURES
-        # because missing_fields only tracks RAW_FEATURES — comparing apples to apples
+       
         provided_fields = [f for f in RAW_FEATURES if f not in missing_fields]
         filled_feature_correlations = {}
 
@@ -321,14 +282,7 @@ def api_predict():
                            key=lambda x: abs(x[1]), reverse=True)
                 )
 
-                # # reliability label based on strongest correlation
-                # strongest_r = max((abs(v) for v in correlated_with.values()), default=0)
-                # reliability = (
-                #     "high"     if strongest_r >= 0.6 else
-                #     "moderate" if strongest_r >= 0.3 else
-                #     "low"
-                # )
-
+                
                 filled_feature_correlations[filled_f] = {
                     "filled_value":        filled_values.get(filled_f),  # now always has a value
                     "correlated_with":     correlated_with,

@@ -1,40 +1,7 @@
 """
-impute_features.py
-══════════════════
 Fills the 6 missing features in your custom water-quality dataset
 (Hardness, Chloramines, Sulfate, Conductivity, Organic_carbon,
 Trihalomethanes) using the Kaggle dataset as a reference library.
-
-WHY KNN IMPUTATION (not regression)?
-─────────────────────────────────────
-  The correlation between your 3 available features (ph, Solids,
-  Turbidity) and the 6 missing ones is near-zero in the Kaggle
-  dataset.  A regression model would just predict the global mean
-  for every row — useless.
-
-  KNN imputation is better: it finds the K most similar rows in
-  Kaggle (by ph + scaled_Solids + Turbidity) and borrows their
-  values.  The result is statistically representative, even when
-  direct linear correlation is weak.
-
-SOLIDS SCALE MISMATCH FIX
-──────────────────────────
-  Your instrument:  32 – 596  (TDS sensor, likely in mg/L × 0.01
-                               or a normalised reading)
-  Kaggle dataset:   320 – 61 227  (TDS in mg/L)
-
-  Fix: Quantile mapping — each custom Solids value is mapped to the
-  same percentile rank inside the Kaggle Solids distribution.  This
-  preserves the relative ordering of your readings without needing
-  to know the exact unit conversion factor.
-
-USAGE
-─────
-  python impute_features.py \
-      --kaggle  kaggle_water_quality.csv \
-      --custom  custom_data.csv \
-      --output  custom_data_completed.csv \
-      --k       10
 """
 
 import os
@@ -57,9 +24,7 @@ ALL_FEATURES = AVAILABLE_FEATURES + MISSING_FEATURES
 TARGET_COL   = "Potability"
 
 
-# ══════════════════════════════════════════════════════════════════════════════
 # Step 1 — Load datasets
-# ══════════════════════════════════════════════════════════════════════════════
 
 def load_data(filepath: str = "data/kaggle_water_quality.csv",
               custom_path: str = "data/custom_data.csv"):
@@ -82,9 +47,7 @@ def load_data(filepath: str = "data/kaggle_water_quality.csv",
     return kaggle, custom
 
 
-# ══════════════════════════════════════════════════════════════════════════════
-# Step 2 — Scale Solids to match Kaggle distribution (quantile mapping)
-# ══════════════════════════════════════════════════════════════════════════════
+
 
 def scale_solids(kaggle_solids: pd.Series, custom_solids: pd.Series) -> np.ndarray:
     """
@@ -99,13 +62,7 @@ def scale_solids(kaggle_solids: pd.Series, custom_solids: pd.Series) -> np.ndarr
     This is the most robust approach when the units/instrument range differ
     and the exact conversion factor is unknown.
     """
-    # qt = QuantileTransformer(
-    #     output_distribution="normal",
-    #     n_quantiles=min(1000, len(kaggle_solids)),
-    #     random_state=42,
-    # )
-    # qt.fit(kaggle_solids.values.reshape(-1, 1))
-
+    
     # Map custom → uniform quantile → same kaggle quantile space
     custom_uniform = np.interp(
         custom_solids.values,
@@ -131,21 +88,10 @@ def scale_solids(kaggle_solids: pd.Series, custom_solids: pd.Series) -> np.ndarr
     return custom_uniform
 
 
-# ══════════════════════════════════════════════════════════════════════════════
 # Step 3 — Build KNN reference from Kaggle
-# ══════════════════════════════════════════════════════════════════════════════
 
 def build_knn_reference(kaggle: pd.DataFrame, k: int):
-    """
-    Prepares the Kaggle dataset as a KNN lookup library.
-
-    Only rows with all 3 available features present are used as
-    reference points (Kaggle has 491 missing ph values — these are
-    dropped here).
-
-    Returns: fitted NearestNeighbors, reference feature matrix,
-             reference target matrix (the 6 missing features).
-    """
+   
     # Drop Kaggle rows missing any of the 3 lookup features
     kaggle_clean = kaggle.dropna(subset=AVAILABLE_FEATURES + MISSING_FEATURES).copy()
 
@@ -168,9 +114,7 @@ def build_knn_reference(kaggle: pd.DataFrame, k: int):
     return knn, scaler, X_ref_scaled, Y_ref, kaggle_clean
 
 
-# ══════════════════════════════════════════════════════════════════════════════
 # Step 4 — Impute missing features for each custom row
-# ══════════════════════════════════════════════════════════════════════════════
 
 def impute(custom: pd.DataFrame,
            scaled_solids: np.ndarray,
@@ -236,9 +180,7 @@ def kaggle_column_order():
              "Potability"]
 
 
-# ══════════════════════════════════════════════════════════════════════════════
 # Step 5 — Validation summary
-# ══════════════════════════════════════════════════════════════════════════════
 
 def validation_summary(kaggle: pd.DataFrame, completed: pd.DataFrame):
     print("\n" + "=" * 60)

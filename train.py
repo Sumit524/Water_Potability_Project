@@ -170,9 +170,7 @@ def _make_cv_pipeline(name: str, model, apply_smote: bool):
         return m
 
 
-# ══════════════════════════════════════════════════════════════════════════════
 # Step 1 — Cross-validate all base models
-# ══════════════════════════════════════════════════════════════════════════════
 
 def cross_validate_all(X_train: pd.DataFrame,
                         y_train: np.ndarray,
@@ -203,9 +201,7 @@ def cross_validate_all(X_train: pd.DataFrame,
     return pd.DataFrame(results).sort_values("CV ROC-AUC", ascending=False)
 
 
-# ══════════════════════════════════════════════════════════════════════════════
 # Step 2 — Optuna hyperparameter tuning (replaces GridSearchCV)
-# ══════════════════════════════════════════════════════════════════════════════
 
 def _suggest_params(trial, name: str) -> dict:
     """
@@ -372,9 +368,8 @@ def tune_hyperparameters(X_train: pd.DataFrame,
     return results
 
 
-# ══════════════════════════════════════════════════════════════════════════════
 # Step 3 — Soft-voting ensemble
-# ══════════════════════════════════════════════════════════════════════════════
+
 from sklearn.preprocessing import LabelEncoder
 
 def build_voting_ensemble(tuned_models: dict,
@@ -403,9 +398,7 @@ def build_voting_ensemble(tuned_models: dict,
     print(f"[Ensemble] Ensemble of {len(estimators)} models ready (pre-fitted, no re-train).")
     return voting
 
-# ══════════════════════════════════════════════════════════════════════════════
 # Step 4 — Test set evaluation
-# ══════════════════════════════════════════════════════════════════════════════
 
 def train_and_evaluate(
     X_train: pd.DataFrame,
@@ -547,9 +540,7 @@ def _print_score(r: dict):
           f"  F1={r['F1 Score']:.4f}  AUC={r['ROC-AUC']:.4f}{gap_str}")
 
 
-# ══════════════════════════════════════════════════════════════════════════════
 # Step 5 — Youden-J optimal decision threshold
-# ══════════════════════════════════════════════════════════════════════════════
 
 def find_optimal_threshold(model, X_test: pd.DataFrame,
                             y_test: np.ndarray) -> float:
@@ -557,9 +548,6 @@ def find_optimal_threshold(model, X_test: pd.DataFrame,
     Shift the decision boundary away from the default 0.5 using Youden's J
     statistic (argmax of TPR - FPR on the ROC curve).
 
-    This does NOT change ROC-AUC (threshold-independent) but meaningfully
-    improves Recall and F1 — especially important for imbalanced classes
-    where 0.5 is rarely the best boundary.
     """
     y_proba = model.predict_proba(X_test)[:, 1]
     fpr, tpr, thresholds = roc_curve(y_test, y_proba)
@@ -585,9 +573,7 @@ def find_optimal_threshold(model, X_test: pd.DataFrame,
     return best_t
 
 
-# ══════════════════════════════════════════════════════════════════════════════
 # Step 6 — Detailed report
-# ══════════════════════════════════════════════════════════════════════════════
 
 def detailed_report(model, X_test: pd.DataFrame, y_test: np.ndarray,
                     name: str, eval_scaler=None) -> None:
@@ -654,9 +640,7 @@ def detailed_report(model, X_test: pd.DataFrame, y_test: np.ndarray,
         print(f"[Train] ⚠ Importance length mismatch — skipping")
 
 
-# ══════════════════════════════════════════════════════════════════════════════
 # Artifact helpers
-# ══════════════════════════════════════════════════════════════════════════════
 
 def save_best_hyperparameters(tuning_results: dict) -> None:
     summary = {}
@@ -693,9 +677,7 @@ def apply_smote(X_train, y_train):
     return X_train, y_train
 
 
-# ══════════════════════════════════════════════════════════════════════════════
 # Main entry point
-# ══════════════════════════════════════════════════════════════════════════════
 
 def train(
     X_train: pd.DataFrame,
@@ -703,20 +685,7 @@ def train(
     y_train: np.ndarray,
     y_test:  np.ndarray,
 ) -> Tuple[object, str, pd.DataFrame, pd.DataFrame]:
-    """
-    Full training pipeline — backward-compatible signature (returns 4 values).
-
-    Steps:
-      1. Compute exact class ratio → set XGBoost + LightGBM weights
-      2. Cross-validate all base models (SMOTE + scaler per fold)
-      3. Optuna-tune top-N models (continuous search, TPE sampler)
-      4. Build soft-voting ensemble from tuned models
-      5. Evaluate all models on held-out test set
-      6. Find Youden-J optimal decision threshold
-      7. Detailed report + save all artifacts
-
-    Returns: best_model, best_name, comparison_df, cv_results
-    """
+   
     print("\n" + "="*60)
     print("  WATER POTABILITY — MAXIMUM PERFORMANCE PIPELINE")
     print("="*60)
@@ -767,9 +736,7 @@ def train(
     return best_model, best_name, comparison_df, cv_results
 
 
-# ══════════════════════════════════════════════════════════════════════════════
 # Script entry point
-# ══════════════════════════════════════════════════════════════════════════════
 
 if __name__ == "__main__":
     from data_loader         import load_data

@@ -1,3 +1,7 @@
+"""
+Evaluates model performance by computing metrics (accuracy, loss, etc.) on a test/validation dataset using a trained model.
+"""
+
 import json
 import os
 import warnings
@@ -16,7 +20,6 @@ from sklearn.preprocessing import StandardScaler
 
 warnings.filterwarnings("ignore")
 
-# ── Constants ─────────────────────────────────────────────────────────────────
 
 REPORT_DIR = "reports"
 MODEL_DIR  = "models"
@@ -109,8 +112,7 @@ def _plot_roc_curve(
     best_threshold = float(thresholds[ix])
     print(f"[Evaluate] Best Threshold (Youden's J): {best_threshold:.4f}")
 
-    # Use variant-specific filename so the selected run does not overwrite
-    # the base run's threshold file.
+   
     os.makedirs(MODEL_DIR, exist_ok=True)
     threshold_file = "threshold_selected.json" if selected else "threshold.json"
     threshold_data = {"model": model_name, "threshold": best_threshold, "auc": float(auc)}
@@ -156,14 +158,7 @@ def _plot_feature_importance(
     selected: bool,
     eval_scaler: StandardScaler = None,
 ) -> None:
-    """
-    Plot feature importance.
-
-    For tree-based models  → native feature_importances_ (fast, no data needed).
-    For SVM / LR           → permutation importance on SCALED X_test.
-                             eval_scaler must be supplied; without it the model
-                             receives unscaled data and predictions are invalid.
-    """
+   
     feature_names = X_test.columns.tolist()
 
     if hasattr(model, "feature_importances_"):
@@ -219,22 +214,7 @@ def _run_evaluation(
     label: str,
     eval_scaler: StandardScaler = None,
 ) -> None:
-    """
-    Core evaluation logic shared by `evaluate` and `evaluate_selected`.
-
-    Parameters
-    ----------
-    model        : fitted estimator returned by train().
-    model_name   : string name of the best model.
-    X_test       : raw (unscaled) test features as a DataFrame.
-    y_test       : true labels.
-    selected     : True when evaluating a feature-selected variant
-                   (controls file-name suffixes).
-    label        : human-readable label used in the printed report header.
-    eval_scaler  : StandardScaler fitted on X_train during training.
-                   Passed through to _plot_feature_importance so that
-                   SVM / LR permutation importance uses correctly scaled data.
-    """
+    
     # Scale X_test before predicting if the model requires it
     X_input = (eval_scaler.transform(X_test)
                if (model_name in NEEDS_SCALING and eval_scaler is not None)
@@ -291,7 +271,6 @@ if __name__ == "__main__":
     from feature_engineering import engineer_features
     from preprocess          import preprocess
     from train               import train
-    # from train_selected      import train_selected
 
     # ── Load & engineer features ──────────────────────────────────────────────
     df = load_data()
@@ -304,8 +283,5 @@ if __name__ == "__main__":
     # train() returns exactly 4 values: best_model, best_name, comparison_df, cv_results
     best_model, best_name, _, _ = train(X_train, X_test, y_train, y_test)
 
-    # ── Evaluate ──────────────────────────────────────────────────────────────
-    # NOTE: eval_scaler is optional here. If best_model is SVM or Logistic
-    # Regression, pass the scaler from train() for correct permutation importance.
-    # For tree-based models it is not needed and can be omitted.
+   
     evaluate(best_model, best_name, X_test, y_test)
