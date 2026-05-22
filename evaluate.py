@@ -81,23 +81,6 @@ def _plot_metric_summary(
     _save(fig, _filename("metric_summary", selected))
 
 
-# ── 2. Confusion Matrix ───────────────────────────────────────────────────────
-
-def _plot_confusion_matrix(y_test, y_pred, model_name: str, selected: bool) -> None:
-    cm = confusion_matrix(y_test, y_pred)
-    fig, ax = plt.subplots(figsize=(6, 5))
-    sns.heatmap(
-        cm, annot=True, fmt="d", cmap="Blues",
-        xticklabels=["Not Potable", "Potable"],
-        yticklabels=["Not Potable", "Potable"],
-        linewidths=0.5, ax=ax,
-    )
-    ax.set_title(f"Confusion Matrix — {model_name}", fontsize=13, fontweight="bold", pad=12)
-    ax.set_xlabel("Predicted", fontsize=11)
-    ax.set_ylabel("Actual",    fontsize=11)
-    plt.tight_layout()
-    _save(fig, _filename("confusion_matrix", selected))
-
 
 # ── 3. ROC Curve ──────────────────────────────────────────────────────────────
 
@@ -169,7 +152,7 @@ def _plot_feature_importance(
         if eval_scaler is not None:
             X_for_perm = eval_scaler.transform(X_test)
         else:
-            # Fallback: fit a fresh scaler on X_test (last resort — log a warning)
+           
             print("[Evaluate] ⚠  eval_scaler not supplied for permutation importance. "
                   "Fitting a scaler on X_test as fallback (may not match training scale).")
             X_for_perm = StandardScaler().fit_transform(X_test)
@@ -230,7 +213,6 @@ def _run_evaluation(
     print("[Evaluate] Generating visualizations ...\n")
 
     _plot_metric_summary    (y_test, y_pred, y_proba, model_name, selected)
-    _plot_confusion_matrix  (y_test, y_pred,          model_name, selected)
     _plot_roc_curve         (y_test, y_proba,         model_name, selected)
     _plot_precision_recall  (y_test, y_proba,         model_name, selected)
     # Pass eval_scaler so SVM / LR permutation importance is computed correctly

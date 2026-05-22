@@ -9,7 +9,12 @@ It uses key water parameters:
 * pH
 * Total Dissolved Solids (TDS)
 * Turbidity
-* temperature
+* Conductivity
+* Hardness
+* Sulfate
+* Chloramines
+* Organic Carbon
+* Trihalomethanes
 
 The system is designed to work with:
 
@@ -22,22 +27,7 @@ The system is designed to work with:
 
 * Build a Machine Learning model for water quality prediction
 * Use low-cost sensors for real-time data collection
-* Provide a simple user interface for prediction
-* Replace dataset with real sensor data in future
-
----
-
-## 🧠 Tech Stack
-
-| Component            | Technology         |
-| -------------------- | ------------------ |
-| Programming Language | Python             |
-| ML Library           | Scikit-learn       |
-| Data Handling        | Pandas, NumPy      |
-| Model Saving         | Joblib             |
-| UI                   | Tkinter            |
-| Hardware             | Arduino Uno        |
-| Sensors              | pH, TDS, Turbidity |
+* Provide a simple user interface for prediction results
 
 ---
 
@@ -102,8 +92,7 @@ python app.py
 
 ## 📊 Model Details
 
-* Algorithm: Random Forest Classifier
-* Input Features:
+* Primary Input features Input Features:
 
   * pH
   * TDS (Solids)
@@ -119,7 +108,6 @@ python app.py
 
 * Virtual environment (`venv/`) is not included in GitHub
 * Use `requirements.txt` to install dependencies
-* Dataset can be replaced with real sensor data
 
 ---
 

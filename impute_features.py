@@ -59,8 +59,7 @@ def scale_solids(kaggle_solids: pd.Series, custom_solids: pd.Series) -> np.ndarr
       The 50th percentile of Kaggle Solids is ~20 928.
       So your 280 becomes 20 928 in the transformed space.
 
-    This is the most robust approach when the units/instrument range differ
-    and the exact conversion factor is unknown.
+  
     """
     
     # Map custom → uniform quantile → same kaggle quantile space

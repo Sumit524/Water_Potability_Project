@@ -42,7 +42,6 @@ ALL_FEATURES = [
     "conductivity_ratio", "turbidity_organic"
 ]
 
-TESTING_DATA = 20
 app = Flask(__name__, template_folder=os.path.join(BASE_DIR, "templates"))
 
 # ── Cache ─────────────────────────────────────────────────────────
@@ -58,7 +57,7 @@ def get_pipeline():
         _cache["pipeline"] = (joblib.load(IMPUTER_PATH), joblib.load(SCALER_PATH))
     return _cache["pipeline"]
 
-# ── add this helper alongside get_model(), get_pipeline(), etc. ──
+
 def get_solids_mapping():
     src = np.load("data/solids_src_percentiles.npy")
     dst = np.load("data/solids_dst_percentiles.npy")
@@ -106,7 +105,7 @@ def api_dataset():
         potable = int((df["Potability"] == 1).sum())
         not_pot = int((df["Potability"] == 0).sum())
 
-        # Only compute stats for raw columns that exist in the CSV
+      
         feature_stats = {}
         for col in RAW_FEATURES:
             if col in df.columns:
@@ -156,7 +155,7 @@ def api_model():
                              round(train_acc - test_acc, 4) if train_acc is not None else None)
         return jsonify({
             "model_name":       best["model_name"],
-            "accuracy":         test_acc,           # kept for any other consumers
+            "accuracy":         test_acc,         
             "train_accuracy":   train_acc,
             "test_accuracy":    test_acc,
             "overfit_gap":      gap,

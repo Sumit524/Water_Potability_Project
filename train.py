@@ -107,16 +107,16 @@ def _build_base_models(spw: float) -> Dict:
             n_estimators=500,
             learning_rate=0.03,
             max_depth=7,
-            num_leaves=31,       # ← reduced (was 63)
-            min_child_samples=30,# ← increased (was 10) — forces larger leaf size
-            min_split_gain=0.1,  # ← NEW — stops trivial splits
-            reg_alpha=2.0,       # ← increased (was 1.0)
-            reg_lambda=3.0,      # ← increased (was 2.0)
-            class_weight={0: 1.0, 1: spw},  # ← exact ratio
+            num_leaves=31,      
+            min_child_samples=30,
+            min_split_gain=0.1,  
+            reg_alpha=2.0,      
+            reg_lambda=3.0,     
+            class_weight={0: 1.0, 1: spw},  
             random_state=RANDOM_STATE, n_jobs=-1, verbose=-1,
         ),
         "Random Forest": RandomForestClassifier(
-            n_estimators=500, max_depth=15,       # was None → caused 100% train acc (overfitting)
+            n_estimators=500, max_depth=15,      
             min_samples_split=6, min_samples_leaf=4,
             max_features="sqrt", class_weight="balanced",
             random_state=RANDOM_STATE, n_jobs=-1,
@@ -124,10 +124,10 @@ def _build_base_models(spw: float) -> Dict:
         "Gradient Boosting": GradientBoostingClassifier(
             n_estimators=200, learning_rate=0.05,
             max_depth=4, random_state=RANDOM_STATE,
-            # No class_weight param → sample_weight at fit time
+            
         ),
         "Extra Trees": ExtraTreesClassifier(
-            n_estimators=300, max_depth=15,       # was None → caused overfitting
+            n_estimators=300, max_depth=15,      
             min_samples_split=6, min_samples_leaf=4,
             class_weight="balanced",
             random_state=RANDOM_STATE, n_jobs=-1,
@@ -238,24 +238,24 @@ def _suggest_params(trial, name: str) -> dict:
 
     elif name == "Gradient Boosting":
         return dict(
-            n_estimators     = trial.suggest_int("n_estimators", 100, 300),  # was 500
-            max_depth        = trial.suggest_int("max_depth", 2, 4),          # was 7
+            n_estimators     = trial.suggest_int("n_estimators", 100, 300),  
+            max_depth        = trial.suggest_int("max_depth", 2, 4),          
             learning_rate    = trial.suggest_float("learning_rate", 0.01, 0.1, log=True),
             subsample        = trial.suggest_float("subsample", 0.6, 0.9),
-            min_samples_leaf = trial.suggest_int("min_samples_leaf", 4, 12),  # was 8 — push higher
+            min_samples_leaf = trial.suggest_int("min_samples_leaf", 4, 12), 
     )
     elif name == "Random Forest":
         return dict(
             n_estimators     = trial.suggest_int("n_estimators", 200, 500),
-            max_depth        = trial.suggest_int("max_depth", 4, 10),         # was 20 — too deep
-            min_samples_split= trial.suggest_int("min_samples_split", 6, 16), # was 12
-            min_samples_leaf = trial.suggest_int("min_samples_leaf", 4, 12),  # was 10
+            max_depth        = trial.suggest_int("max_depth", 4, 10),         
+            min_samples_split= trial.suggest_int("min_samples_split", 6, 16), 
+            min_samples_leaf = trial.suggest_int("min_samples_leaf", 4, 12),  
             max_features     = trial.suggest_categorical("max_features", ["sqrt", "log2"]),
     )
     elif name == "Extra Trees":
         return dict(
             n_estimators     = trial.suggest_int("n_estimators", 200, 600),
-            max_depth        = trial.suggest_int("max_depth", 5, 20),  # removed None — unlimited depth causes overfitting
+            max_depth        = trial.suggest_int("max_depth", 5, 20), 
             min_samples_split= trial.suggest_int("min_samples_split", 4, 12),
             min_samples_leaf = trial.suggest_int("min_samples_leaf", 2, 8),
         )
@@ -389,8 +389,7 @@ def build_voting_ensemble(tuned_models: dict,
 
     voting = VotingClassifier(estimators=estimators, voting="soft", n_jobs=-1)
 
-    # ── Use already-fitted estimators directly — do NOT call .fit() ──
-    # Manually set the internal sklearn state that .fit() would have set
+  
     voting.estimators_ = [est for _, est in estimators]
     voting.le_         = LabelEncoder().fit(y_train)
     voting.classes_    = voting.le_.classes_
@@ -437,9 +436,7 @@ def train_and_evaluate(
         tag        = " [tuned]" if is_tuned else ""
 
         if is_tuned:
-            # Use the already-fitted pipeline from tuning — do NOT re-fit,
-            # as that would re-run SMOTE on a potentially different random seed
-            # and discard the carefully tuned state from Optuna.
+           
             model = tuned_info["best_estimator"]
             y_train_pred = model.predict(X_train)
             y_pred  = model.predict(X_test)
